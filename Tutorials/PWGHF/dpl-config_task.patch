@@ -1,0 +1,65 @@
+diff --git a/Tutorials/PWGHF/dpl-config_task.json b/Tutorials/PWGHF/dpl-config_task.json
+index 719c8acd..eccf3af7 100644
+--- a/Tutorials/PWGHF/dpl-config_task.json
++++ b/Tutorials/PWGHF/dpl-config_task.json
+@@ -7,9 +7,9 @@
+         "start-value-enumeration": "0",
+         "end-value-enumeration": "-1",
+         "step-value-enumeration": "1",
+-        "aod-file": "AnalysisResults_trees.root",
++        "aod-file-private": "/lustre/alice/users/lubynets/ao2ds/Tutorial3.0/AnalysisResults_trees.root",
+         "aod-parent-access-level": "1",
+-        "aod-parent-base-path-replacement": "old-path-to-parent;new-path-to-parent"
++        "aod-parent-base-path-replacement": "/home/ldellost/HFO2_tutorial/;/lustre/alice/users/lubynets/ao2ds/Tutorial3.0/"
+     },
+     "internal-dpl-aod-spawner": "",
+     "bc-converter": "",
+@@ -39,10 +39,35 @@
+         "processRun3": "true"
+     },
+     "event-selection-task": {
+-        "syst": "pp",
+         "muonSelection": "0",
+-        "customDeltaBC": "300",
+-        "isMC": "false",
++        "maxDiffZvtxFT0vsPV": "1",
++        "isMC": "0",
++        "TimeIntervalForOccupancyCalculationMin": "-40",
++        "TimeIntervalForOccupancyCalculationMax": "100",
++        "TimeBinsForOccupancyCalculation": {
++            "values": [
++                "-40",
++                "-20",
++                "0",
++                "25",
++                "50",
++                "75",
++                "100"
++            ]
++        },
++        "ReferenceOccupanciesInTimeBins": {
++            "values": [
++                "3000",
++                "1400",
++                "750",
++                "1000",
++                "1750",
++                "4000"
++            ]
++        },
++        "TimeRangeVetoOnCollStandard": "10",
++        "TimeRangeVetoOnCollNarrow": "4",
++        "UseWeightsForOccupancyEstimator": "true",
+         "processRun2": "false",
+         "processRun3": "true"
+     },
+@@ -170,7 +195,8 @@
+         "ptPidTpcMax": "10",
+         "nSigmaTpc": "3",
+         "cpaMin": "0.98",
+-        "massWindow": "0.4"
++        "massWindow": "0.4",
++        "decayLengthMin": "0.01"
+     },
+     "hf-task-d0": {
+         "selectionFlagD0": "1",

@@ -28,16 +28,17 @@ DIR_THIS="$(dirname "$(realpath "$0")")"
 JSON="$DIR_THIS/dpl-config_task.json"
 
 # command line options of O2 workflows
-OPTIONS="-b --configuration json://$JSON --aod-memory-rate-limit 2000000000 --shm-segment-size 16000000000 --resources-monitoring 2 --min-failure-level error"
+OPTIONS="-b --configuration json://$JSON --pipeline=derived-basic-consumer:4 --aod-memory-rate-limit 2000000000 --shm-segment-size 16000000000 --resources-monitoring 2 --min-failure-level error"
 
 # execute the mini task workflow and its dependencies
 # shellcheck disable=SC2086 # Ignore unquoted options.
+time \
 o2-analysistutorial-hf-task-mini $OPTIONS | \
 o2-analysis-timestamp $OPTIONS | \
 o2-analysis-track-propagation $OPTIONS | \
 o2-analysis-event-selection $OPTIONS | \
 o2-analysis-pid-tpc-base $OPTIONS | \
-o2-analysis-pid-tpc-full $OPTIONS | \
+o2-analysis-pid-tpc $OPTIONS | \
 o2-analysis-pid-tof-base $OPTIONS | \
 o2-analysis-pid-tof-full $OPTIONS | \
 o2-analysis-bc-converter $OPTIONS | \

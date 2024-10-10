@@ -16,6 +16,8 @@
 #include "Framework/runDataProcessing.h"
 #include "Framework/AnalysisTask.h"
 
+#include <iostream>
+
 using namespace o2;
 using namespace o2::framework;
 
@@ -27,6 +29,8 @@ struct SingleTracks {
   // loop over each single track
   void process(aod::Track const& track)
   {
+    if(count > 100000) return;
+    std::cout << "SingleTracks::process()\n";
     // count the tracks contained in the input file
     LOGF(info, "Track %d: Momentum: %f", count, track.p());
     count++;
@@ -43,12 +47,15 @@ struct AllTracks {
   // loop over data frames
   void process(aod::Tracks const& tracks)
   {
+    if (numberDataFrames > 5) return;
+    std::cout << "AllTracks::process()\n";
     numberDataFrames++;
 
     // count the tracks contained in each data frame
     count = 0;
     for (auto& track : tracks) {
-      LOGF(debug, "Track with momentum %f", track.pt());
+      if (count > 100) continue;
+      LOGF(info, "Track with momentum %f", track.pt());
       count++;
     }
     totalCount += count;

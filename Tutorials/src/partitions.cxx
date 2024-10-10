@@ -87,7 +87,7 @@ struct PartitionInside {
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 {
   return WorkflowSpec{
-    adaptAnalysisTask<PartitionOutside>(cfgc),
+//     adaptAnalysisTask<PartitionOutside>(cfgc),
     adaptAnalysisTask<PartitionInside>(cfgc),
   };
 }
