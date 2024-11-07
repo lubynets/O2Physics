@@ -1135,7 +1135,7 @@ struct HfTrackIndexSkimCreator {
     Configurable<bool> debug{"debug", false, "debug mode"};
     Configurable<bool> debugPvRefit{"debugPvRefit", false, "debug lines for primary vertex refit"};
     Configurable<bool> fillHistograms{"fillHistograms", true, "fill histograms"};
-    // Configurable<int> nCollsMax{"nCollsMax", -1, "Max collisions per file"}; //can be added to run over limited collisions per file - for tesing purposes
+    Configurable<int> nCollsMax{"nCollsMax", -1, "Max collisions per file"}; //can be added to run over limited collisions per file - for tesing purposes
     // preselection
     Configurable<double> ptTolerance{"ptTolerance", 0.1, "pT tolerance in GeV/c for applying preselections before vertex reconstruction"};
     // preselection of 3-prongs using the decay length computed only with the first two tracks
@@ -1218,7 +1218,7 @@ struct HfTrackIndexSkimCreator {
   double massDzero{0.};
   double massPhi{0.};
 
-  // int nColls{0}; //can be added to run over limited collisions per file - for tesing purposes
+  int nColls{0}; //can be added to run over limited collisions per file - for tesing purposes
 
   static constexpr int kN2ProngDecays = hf_cand_2prong::DecayType::N2ProngDecays;                                                                                                               // number of 2-prong hadron types
   static constexpr int kN3ProngDecays = hf_cand_3prong::DecayType::N3ProngDecays;                                                                                                               // number of 3-prong hadron types
@@ -2010,17 +2010,15 @@ struct HfTrackIndexSkimCreator {
   {
 
     // can be added to run over limited collisions per file - for tesing purposes
-    /*
-    if (nCollsMax > -1){
-      if (nColls == nCollMax){
-        return;
-        //can be added to run over limited collisions per file - for tesing purposes
-      }
-      nColls++;
-    }
-    */
 
     for (const auto& collision : collisions) {
+      if (config.nCollsMax > -1){
+        if (nColls >= config.nCollsMax){
+          return;
+          //can be added to run over limited collisions per file - for tesing purposes
+        }
+        nColls++;
+      }
 
       /// retrieve PV contributors for the current collision
       std::vector<int64_t> vecPvContributorGlobId{};

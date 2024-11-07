@@ -306,7 +306,7 @@ constexpr double binsPt[nBinsPt + 1] = {
   100.0};
 auto vecBinsPt = std::vector<double>{binsPt, binsPt + nBinsPt + 1};
 
-// default values for the cuts
+// default values for the cuts                  m       DCA    cos th  pTK pTPi      d0K          d0Pi            d0d0     cpa cpaXY minnL maxL
 constexpr double cuts[nBinsPt][nCutVars] = {{0.400, 350. * 1E-4, 0.8, 0.5, 0.5, 1000. * 1E-4, 1000. * 1E-4, -5000. * 1E-8, 0.80, 0., 0., 10., 10., 0.06, 0.5},   /* 0   < pT < 0.5 */
                                             {0.400, 350. * 1E-4, 0.8, 0.5, 0.5, 1000. * 1E-4, 1000. * 1E-4, -5000. * 1E-8, 0.80, 0., 0., 10., 10., 0.06, 0.5},   /* 0.5 < pT < 1   */
                                             {0.400, 300. * 1E-4, 0.8, 0.4, 0.4, 1000. * 1E-4, 1000. * 1E-4, -25000. * 1E-8, 0.80, 0., 0., 10., 10., 0.06, 0.5},  /* 1   < pT < 1.5 */

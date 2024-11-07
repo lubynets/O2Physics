@@ -24,7 +24,6 @@
 #include "Framework/runDataProcessing.h"
 
 #include "PWGHF/Core/HfHelper.h"
-#include "PWGHF/Core/CentralityEstimation.h"
 #include "PWGHF/DataModel/CandidateReconstructionTables.h"
 #include "PWGHF/DataModel/CandidateSelectionTables.h"
 
@@ -44,7 +43,7 @@ struct HfTaskLc {
   ConfigurableAxis thnConfigAxisPt{"thnConfigAxisPt", {72, 0, 36}, ""};
   ConfigurableAxis thnConfigAxisMass{"thnConfigAxisMass", {300, 1.98, 2.58}, ""};
   ConfigurableAxis thnConfigAxisPtProng{"thnConfigAxisPtProng", {100, 0, 20}, ""};
-  ConfigurableAxis thnConfigAxisCentrality{"thnConfigAxisCentrality", {100, 0, 100}, ""};
+  ConfigurableAxis thnConfigAxisMultiplicity{"thnConfigAxisMultiplicity", {100, 0, 1000}, ""};
   ConfigurableAxis thnConfigAxisChi2PCA{"thnConfigAxisChi2PCA", {100, 0, 20}, ""};
   ConfigurableAxis thnConfigAxisDecLength{"thnConfigAxisDecLength", {10, 0, 0.05}, ""};
   ConfigurableAxis thnConfigAxisCPA{"thnConfigAxisCPA", {20, 0.8, 1}, ""};
@@ -55,119 +54,141 @@ struct HfTaskLc {
   HfHelper hfHelper;
   Filter filterSelectCandidates = aod::hf_sel_candidate_lc::isSelLcToPKPi >= selectionFlagLc || aod::hf_sel_candidate_lc::isSelLcToPiKP >= selectionFlagLc;
 
-  using Collisions = soa::Join<aod::Collisions, aod::EvSels>::iterator;
-  using CollisionsMc = soa::Join<aod::Collisions, aod::McCollisionLabels, aod::EvSels>::iterator;
-  using CollisionsWithFT0C = soa::Join<aod::Collisions, aod::EvSels, aod::CentFT0Cs>::iterator;
-  using CollisionsMcWithFT0C = soa::Join<aod::Collisions, aod::McCollisionLabels, aod::EvSels, aod::CentFT0Cs>::iterator;
-  using CollisionsWithFT0M = soa::Join<aod::Collisions, aod::EvSels, aod::CentFT0Ms>::iterator;
-  using CollisionsMcWithFT0M = soa::Join<aod::Collisions, aod::McCollisionLabels, aod::EvSels, aod::CentFT0Ms>::iterator;
-
   using LcCandidates = soa::Filtered<soa::Join<aod::HfCand3Prong, aod::HfSelLc>>;
   using LcCandidatesMl = soa::Filtered<soa::Join<aod::HfCand3Prong, aod::HfSelLc, aod::HfMlLcToPKPi>>;
 
   using LcCandidatesMc = soa::Filtered<soa::Join<aod::HfCand3Prong, aod::HfSelLc, aod::HfCand3ProngMcRec>>;
   using LcCandidatesMlMc = soa::Filtered<soa::Join<aod::HfCand3Prong, aod::HfSelLc, aod::HfMlLcToPKPi, aod::HfCand3ProngMcRec>>;
 
-  HistogramRegistry registry{
-    "registry",
-    {/// mass candidate
-     {"Data/hMass", "3-prong candidates;inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}}},
-     {"MC/reconstructed/signal/hMassRecSig", "3-prong candidates (matched);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}}},
-     {"MC/reconstructed/prompt/hMassRecSigPrompt", "3-prong candidates (matched, prompt);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}}},
-     {"MC/reconstructed/nonprompt/hMassRecSigNonPrompt", "3-prong candidates (matched, non-prompt);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}}},
-     /// pT
-     {"Data/hPt", "3-prong candidates;candidate #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/signal/hPtRecSig", "3-prong candidates (matched);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/prompt/hPtRecSigPrompt", "3-prong candidates (matched, prompt);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/nonprompt/hPtRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/generated/signal/hPtGen", "MC particles (matched);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/generated/prompt/hPtGenPrompt", "MC particles (matched, prompt);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/generated/nonprompt/hPtGenNonPrompt", "MC particles (matched, non-prompt);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/generated/signal/hPtGenSig", "3-prong candidates (matched);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"Data/hPtProng0", "3-prong candidates;prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/signal/hPtRecProng0Sig", "3-prong candidates (matched);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/prompt/hPtRecProng0SigPrompt", "3-prong candidates (matched, prompt);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/nonprompt/hPtRecProng0SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"Data/hPtProng1", "3-prong candidates;prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/signal/hPtRecProng1Sig", "3-prong candidates (matched);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/prompt/hPtRecProng1SigPrompt", "3-prong candidates (matched, prompt);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/nonprompt/hPtRecProng1SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"Data/hPtProng2", "3-prong candidates;prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/signal/hPtRecProng2Sig", "3-prong candidates (matched);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/prompt/hPtRecProng2SigPrompt", "3-prong candidates (matched, prompt);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"MC/reconstructed/nonprompt/hPtRecProng2SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{360, 0., 36.}}}},
-     {"Data/hMultiplicity", "multiplicity;multiplicity;entries", {HistType::kTH1F, {{10000, 0., 10000.}}}},
-     /// DCAxy to prim. vertex prongs
-     {"Data/hd0Prong0", "3-prong candidates;prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/signal/hd0RecProng0Sig", "3-prong candidates (matched);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/prompt/hd0RecProng0SigPrompt", "3-prong candidates (matched, prompt);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/nonprompt/hd0RecProng0SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"Data/hd0Prong1", "3-prong candidates;prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/signal/hd0RecProng1Sig", "3-prong candidates (matched);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/prompt/hd0RecProng1SigPrompt", "3-prong candidates (matched, prompt);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/nonprompt/hd0RecProng1SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"Data/hd0Prong2", "3-prong candidates;prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/signal/hd0RecProng2Sig", "3-prong candidates (matched);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/prompt/hd0RecProng2SigPrompt", "3-prong candidates (matched, prompt);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     {"MC/reconstructed/nonprompt/hd0RecProng2SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}}},
-     /// decay length candidate
-     {"Data/hDecLength", "3-prong candidates;decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/signal/hDecLengthRecSig", "3-prong candidates (matched);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/prompt/hDecLengthRecSigPrompt", "3-prong candidates (matched, prompt);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/nonprompt/hDecLengthRecSigNonPrompt", "3-prong candidates (matched, non-prompt);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     /// decay length xy candidate
-     {"Data/hDecLengthxy", "3-prong candidates;decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/signal/hDecLengthxyRecSig", "3-prong candidates (matched);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/prompt/hDecLengthxyRecSigPrompt", "3-prong candidates (matched, prompt);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     {"MC/reconstructed/nonprompt/hDecLengthxyRecSigNonPrompt", "3-prong candidates (matched, non-prompt);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}}},
-     /// proper lifetime
-     {"Data/hCt", "3-prong candidates;proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}}},
-     {"MC/reconstructed/signal/hCtRecSig", "3-prong candidates (matched);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}}},
-     {"MC/reconstructed/prompt/hCtRecSigPrompt", "3-prong candidates (matched, prompt);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}}},
-     {"MC/reconstructed/nonprompt/hCtRecSigNonPrompt", "3-prong candidates (matched, non-prompt);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}}},
-     /// cosine of pointing angle
-     {"Data/hCPA", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/signal/hCPARecSig", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/prompt/hCPARecSigPrompt", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/nonprompt/hCPARecSigNonPrompt", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     /// cosine of pointing angle xy
-     {"Data/hCPAxy", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/signal/hCPAxyRecSig", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/prompt/hCPAxyRecSigPrompt", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     {"MC/reconstructed/nonprompt/hCPAxyRecSigNonPrompt", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}}},
-     /// Chi 2 PCA to sec. vertex
-     {"Data/hDca2", "3-prong candidates;prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}}},
-     {"MC/reconstructed/signal/hDca2RecSig", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}}},
-     {"MC/reconstructed/prompt/hDca2RecSigPrompt", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}}},
-     {"MC/reconstructed/nonprompt/hDca2RecSigNonPrompt", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}}},
-     /// eta
-     {"Data/hEta", "3-prong candidates;#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/reconstructed/signal/hEtaRecSig", "3-prong candidates (matched);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/reconstructed/prompt/hEtaRecSigPrompt", "3-prong candidates (matched, prompt);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/reconstructed/nonprompt/hEtaRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/signal/hEtaGen", "MC particles (matched);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/prompt/hEtaGenPrompt", "MC particles (matched, prompt);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/nonprompt/hEtaGenNonPrompt", "MC particles (matched, non-prompt);#it{#eta};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/signal/hYGen", "MC particles (matched);#it{y};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/prompt/hYGenPrompt", "MC particles (matched, prompt);#it{y};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     {"MC/generated/nonprompt/hYGenNonPrompt", "MC particles (matched, non-prompt);#it{y};entries", {HistType::kTH1F, {{100, -2., 2.}}}},
-     /// phi
-     {"Data/hPhi", "3-prong candidates;#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/reconstructed/signal/hPhiRecSig", "3-prong candidates (matched);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/reconstructed/prompt/hPhiRecSigPrompt", "3-prong candidates (matched, prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/reconstructed/nonprompt/hPhiRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/generated/signal/hPhiGen", "MC particles (matched);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/generated/prompt/hPhiGenPrompt", "MC particles (matched, prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}},
-     {"MC/generated/nonprompt/hPhiGenNonPrompt", "MC particles (matched, non-prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}}}}};
+  HistogramRegistry registry{"registry", {}};
 
   void init(InitContext&)
   {
-    std::array<bool, 12> doprocess{doprocessDataStd, doprocessDataStdWithFT0C, doprocessDataStdWithFT0M, doprocessDataWithMl, doprocessDataWithMlWithFT0C, doprocessDataWithMlWithFT0M, doprocessMcStd, doprocessMcStdWithFT0C, doprocessMcStdWithFT0M, doprocessMcWithMl, doprocessMcWithMlWithFT0C, doprocessMcWithMlWithFT0M};
+    std::array<bool, 4> doprocess{doprocessDataStd, doprocessDataWithMl, doprocessMcStd, doprocessMcWithMl};
     if ((std::accumulate(doprocess.begin(), doprocess.end(), 0)) != 1) {
       LOGP(fatal, "no or more than one process function enabled! Please check your configuration!");
     }
 
     auto vbins = (std::vector<double>)binsPt;
+
+    /// mass candidate
+    registry.add("Data/hMass", "3-prong candidates;inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}});
+    registry.add("MC/reconstructed/signal/hMassRecSig", "3-prong candidates (matched);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}});
+    registry.add("MC/reconstructed/prompt/hMassRecSigPrompt", "3-prong candidates (matched, prompt);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}});
+    registry.add("MC/reconstructed/nonprompt/hMassRecSigNonPrompt", "3-prong candidates (matched, non-prompt);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}});
+    /// pT
+    registry.add("Data/hPt", "3-prong candidates;candidate #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/signal/hPtRecSig", "3-prong candidates (matched);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/prompt/hPtRecSigPrompt", "3-prong candidates (matched, prompt);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/nonprompt/hPtRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/signal/hPtResidualSig", "3-prong candidates (matched);#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{400, -1, 1}}});
+    registry.add("MC/reconstructed/prompt/hPtResidualSigPrompt", "3-prong candidates (matched, prompt);#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{400, -1, 1}}});
+    registry.add("MC/reconstructed/nonprompt/hPtResidualSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {{400, -1, 1}}});
+    registry.add("MC/reconstructed/signal/hPtResidualVsPtSig", "3-prong candidates (matched);#it{p}_{T}^{rec.} (GeV/#it{c});#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c})", {HistType::kTH2F, {vbins, {400, -1, 1}}});
+    registry.add("MC/reconstructed/prompt/hPtResidualVsPtSigPrompt", "3-prong candidates (matched, prompt);#it{p}_{T}^{rec.} (GeV/#it{c});#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c})", {HistType::kTH2F, {vbins, {400, -1, 1}}});
+    registry.add("MC/reconstructed/nonprompt/hPtResidualVsPtSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{p}_{T}^{rec.} (GeV/#it{c});#it{p}_{T}^{rec.} - #it{p}_{T}^{gen.} (GeV/#it{c})", {HistType::kTH2F, {vbins, {400, -1, 1}}});
+    registry.add("MC/generated/signal/hPtGen", "MC particles (matched);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/generated/prompt/hPtGenPrompt", "MC particles (matched, prompt);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/generated/nonprompt/hPtGenNonPrompt", "MC particles (matched, non-prompt);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/generated/signal/hPtGenSig", "3-prong candidates (matched);#it{p}_{T}^{gen.} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("Data/hPtProng0", "3-prong candidates;prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/signal/hPtRecProng0Sig", "3-prong candidates (matched);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/prompt/hPtRecProng0SigPrompt", "3-prong candidates (matched, prompt);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/nonprompt/hPtRecProng0SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("Data/hPtProng1", "3-prong candidates;prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/signal/hPtRecProng1Sig", "3-prong candidates (matched);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/prompt/hPtRecProng1SigPrompt", "3-prong candidates (matched, prompt);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/nonprompt/hPtRecProng1SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("Data/hPtProng2", "3-prong candidates;prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/signal/hPtRecProng2Sig", "3-prong candidates (matched);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/prompt/hPtRecProng2SigPrompt", "3-prong candidates (matched, prompt);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("MC/reconstructed/nonprompt/hPtRecProng2SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {vbins}});
+    registry.add("Data/hMultiplicity", "multiplicity;multiplicity;entries", {HistType::kTH1F, {{10000, 0., 10000.}}});
+    /// DCAxy to prim. vertex prongs
+    registry.add("Data/hd0Prong0", "3-prong candidates;prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/signal/hd0RecProng0Sig", "3-prong candidates (matched);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/prompt/hd0RecProng0SigPrompt", "3-prong candidates (matched, prompt);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/nonprompt/hd0RecProng0SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("Data/hd0Prong1", "3-prong candidates;prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/signal/hd0RecProng1Sig", "3-prong candidates (matched);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/prompt/hd0RecProng1SigPrompt", "3-prong candidates (matched, prompt);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/nonprompt/hd0RecProng1SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("Data/hd0Prong2", "3-prong candidates;prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/signal/hd0RecProng2Sig", "3-prong candidates (matched);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/prompt/hd0RecProng2SigPrompt", "3-prong candidates (matched, prompt);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/nonprompt/hd0RecProng2SigNonPrompt", "3-prong candidates (matched, non-prompt);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    /// decay length candidate
+    registry.add("Data/hDecLength", "3-prong candidates;decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/signal/hDecLengthRecSig", "3-prong candidates (matched);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/prompt/hDecLengthRecSigPrompt", "3-prong candidates (matched, prompt);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/nonprompt/hDecLengthRecSigNonPrompt", "3-prong candidates (matched, non-prompt);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    /// decay length xy candidate
+    registry.add("Data/hDecLengthxy", "3-prong candidates;decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/signal/hDecLengthxyRecSig", "3-prong candidates (matched);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/prompt/hDecLengthxyRecSigPrompt", "3-prong candidates (matched, prompt);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/nonprompt/hDecLengthxyRecSigNonPrompt", "3-prong candidates (matched, non-prompt);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    /// proper lifetime
+    registry.add("Data/hCt", "3-prong candidates;proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}});
+    registry.add("MC/reconstructed/signal/hCtRecSig", "3-prong candidates (matched);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}});
+    registry.add("MC/reconstructed/prompt/hCtRecSigPrompt", "3-prong candidates (matched, prompt);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}});
+    registry.add("MC/reconstructed/nonprompt/hCtRecSigNonPrompt", "3-prong candidates (matched, non-prompt);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}});
+    /// cosine of pointing angle
+    registry.add("Data/hCPA", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/signal/hCPARecSig", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/prompt/hCPARecSigPrompt", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/nonprompt/hCPARecSigNonPrompt", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    /// cosine of pointing angle xy
+    registry.add("Data/hCPAxy", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/signal/hCPAxyRecSig", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/prompt/hCPAxyRecSigPrompt", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/nonprompt/hCPAxyRecSigNonPrompt", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    /// Chi 2 PCA to sec. vertex
+    registry.add("Data/hDca2", "3-prong candidates;prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}});
+    registry.add("MC/reconstructed/signal/hDca2RecSig", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}});
+    registry.add("MC/reconstructed/prompt/hDca2RecSigPrompt", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}});
+    registry.add("MC/reconstructed/nonprompt/hDca2RecSigNonPrompt", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}});
+    /// eta
+    registry.add("Data/hEta", "3-prong candidates;#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/signal/hEtaRecSig", "3-prong candidates (matched);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/prompt/hEtaRecSigPrompt", "3-prong candidates (matched, prompt);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/nonprompt/hEtaRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/signal/hYRecSig", "3-prong candidates (matched);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/prompt/hYRecSigPrompt", "3-prong candidates (matched, prompt);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/nonprompt/hYRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/signal/hEtaGen", "MC particles (matched);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/prompt/hEtaGenPrompt", "MC particles (matched, prompt);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/nonprompt/hEtaGenNonPrompt", "MC particles (matched, non-prompt);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/signal/hYGen", "MC particles (matched);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/prompt/hYGenPrompt", "MC particles (matched, prompt);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/generated/nonprompt/hYGenNonPrompt", "MC particles (matched, non-prompt);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    /// phi
+    registry.add("Data/hPhi", "3-prong candidates;#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/reconstructed/signal/hPhiRecSig", "3-prong candidates (matched);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/reconstructed/prompt/hPhiRecSigPrompt", "3-prong candidates (matched, prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/reconstructed/nonprompt/hPhiRecSigNonPrompt", "3-prong candidates (matched, non-prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/generated/signal/hPhiGen", "MC particles (matched);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/generated/prompt/hPhiGenPrompt", "MC particles (matched, prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+    registry.add("MC/generated/nonprompt/hPhiGenNonPrompt", "MC particles (matched, non-prompt);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+
+    /// Background
+    registry.add("MC/reconstructed/background/hMassRecBg", "3-prong candidates (background);inv. mass (p K #pi) (GeV/#it{c}^{2})", {HistType::kTH1F, {{600, 1.98, 2.58}}});
+    registry.add("MC/reconstructed/background/hPtRecBg", "3-prong candidates (background);#it{p}_{T}^{rec.} (GeV/#it{c});entries", {HistType::kTH1F, {{vbins}}});
+    registry.add("MC/reconstructed/background/hPtRecProng0Bg", "3-prong candidates (background);prong 0 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{vbins}}});
+    registry.add("MC/reconstructed/background/hPtRecProng1Bg", "3-prong candidates (background);prong 1 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{vbins}}});
+    registry.add("MC/reconstructed/background/hPtRecProng2Bg", "3-prong candidates (background);prong 2 #it{p}_{T} (GeV/#it{c});entries", {HistType::kTH1F, {{vbins}}});
+    registry.add("MC/reconstructed/background/hd0RecProng0Bg", "3-prong candidates (background);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/background/hd0RecProng1Bg", "3-prong candidates (background);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/background/hd0RecProng2Bg", "3-prong candidates (background);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH1F, {{600, -0.4, 0.4}}});
+    registry.add("MC/reconstructed/background/hDecLengthRecBg", "3-prong candidates (background);decay length (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/background/hDecLengthxyRecBg", "3-prong candidates (background);decay length xy (cm);entries", {HistType::kTH1F, {{400, 0., 1.}}});
+    registry.add("MC/reconstructed/background/hCtRecBg", "3-prong candidates (background);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH1F, {{100, 0., 0.2}}});
+    registry.add("MC/reconstructed/background/hCPARecBg", "3-prong candidates;cosine of pointing angle;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/background/hCPAxyRecBg", "3-prong candidates;cosine of pointing angle xy;entries", {HistType::kTH1F, {{110, -1.1, 1.1}}});
+    registry.add("MC/reconstructed/background/hDca2RecBg", "3-prong candidates (matched);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH1F, {{400, 0., 20.}}});
+    registry.add("MC/reconstructed/background/hEtaRecBg", "3-prong candidates (background);#it{#eta};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/background/hYRecBg", "3-prong candidates (background);#it{y};entries", {HistType::kTH1F, {{400, -2., 2.}}});
+    registry.add("MC/reconstructed/background/hPhiRecBg", "3-prong candidates (background);#it{#Phi};entries", {HistType::kTH1F, {{100, 0., 6.3}}});
+
     /// mass candidate
     registry.add("Data/hMassVsPtVsMult", "3-prong candidates;inv. mass (p K #pi) (GeV/#it{c}^{2}); p_{T}; multiplicity", {HistType::kTH3F, {{600, 1.98, 2.58}, {vbins, "#it{p}_{T} (GeV/#it{c})"}, {5000, 0., 10000.}}});
     registry.add("Data/hMassVsPt", "3-prong candidates;inv. mass (p K #pi) (GeV/#it{c}^{2}); p_{T}", {HistType::kTH2F, {{600, 1.98, 2.58}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
@@ -267,13 +288,31 @@ struct HfTaskLc {
     registry.add("MC/reconstructed/prompt/hDecLenErrSigPrompt", "3-prong candidates (matched, prompt);decay length error (cm);entries", {HistType::kTH2F, {{100, 0., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
     registry.add("MC/reconstructed/nonprompt/hDecLenErrSigNonPrompt", "3-prong candidates (matched, non-prompt);decay length error (cm);entries", {HistType::kTH2F, {{100, 0., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
 
+    // background
+    registry.add("MC/reconstructed/background/hMassVsPtRecBg", "3-prong candidates (background);inv. mass (p K #pi) (GeV/#it{c}^{2}); p_{T}", {HistType::kTH2F, {{600, 1.98, 2.58}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hd0VsPtRecProng0Bg", "3-prong candidates (background);prong 0 DCAxy to prim. vertex (cm);entries", {HistType::kTH2F, {{600, -0.4, 0.4}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hd0VsPtRecProng1Bg", "3-prong candidates (background);prong 1 DCAxy to prim. vertex (cm);entries", {HistType::kTH2F, {{600, -0.4, 0.4}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hd0VsPtRecProng2Bg", "3-prong candidates (background);prong 2 DCAxy to prim. vertex (cm);entries", {HistType::kTH2F, {{600, -0.4, 0.4}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hDecLengthVsPtRecBg", "3-prong candidates (background);decay length (cm);entries", {HistType::kTH2F, {{400, 0., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hDecLengthxyVsPtRecBg", "3-prong candidates (background);decay length xy(cm);entries", {HistType::kTH2F, {{400, 0., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hCtVsPtRecBg", "3-prong candidates (background);proper lifetime (#Lambda_{c}) * #it{c} (cm);entries", {HistType::kTH2F, {{100, 0., 0.2}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hCPAVsPtRecBg", "3-prong candidates (background);cosine of pointing angle;entries", {HistType::kTH2F, {{110, -1.1, 1.1}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hCPAxyVsPtRecBg", "3-prong candidates (background);cosine of pointing angle xy;entries", {HistType::kTH2F, {{110, -1.1, 1.1}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hDca2VsPtRecBg", "3-prong candidates (background);prong Chi2PCA to sec. vertex (cm);entries", {HistType::kTH2F, {{400, 0., 20.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hEtaVsPtRecBg", "3-prong candidates (background);candidate #it{#eta};entries", {HistType::kTH2F, {{100, -2., 2.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hPhiVsPtRecBg", "3-prong candidates (background);candidate #it{#Phi};entries", {HistType::kTH2F, {{100, 0., 6.3}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hImpParErrProng0Bg", "3-prong candidates (background);prong 0 impact parameter error (cm);entries", {HistType::kTH2F, {{100, -1., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hImpParErrProng1Bg", "3-prong candidates (background);prong 1 impact parameter error (cm);entries", {HistType::kTH2F, {{100, -1., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hImpParErrProng2Bg", "3-prong candidates (background);prong 2 impact parameter error (cm);entries", {HistType::kTH2F, {{100, -1., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+    registry.add("MC/reconstructed/background/hDecLenErrBg", "3-prong candidates (background);decay length error (cm);entries", {HistType::kTH2F, {{100, 0., 1.}, {vbins, "#it{p}_{T} (GeV/#it{c})"}}});
+
     if (enableTHn) {
       const AxisSpec thnAxisMass{thnConfigAxisMass, "inv. mass (p K #pi) (GeV/#it{c}^{2})"};
       const AxisSpec thnAxisPt{thnConfigAxisPt, "#it{p}_{T}(#Lambda_{c}^{+}) (GeV/#it{c})"};
       const AxisSpec thnAxisPtProng0{thnConfigAxisPtProng, "#it{p}_{T}(prong0) (GeV/#it{c})"};
       const AxisSpec thnAxisPtProng1{thnConfigAxisPtProng, "#it{p}_{T}(prong1) (GeV/#it{c})"};
       const AxisSpec thnAxisPtProng2{thnConfigAxisPtProng, "#it{p}_{T}(prong2) (GeV/#it{c})"};
-      const AxisSpec thnAxisCentrality{thnConfigAxisCentrality, "centrality (FT0C)"};
+      const AxisSpec thnAxisMultiplicity{thnConfigAxisMultiplicity, "multiplicity"};
       const AxisSpec thnAxisChi2PCA{thnConfigAxisChi2PCA, "Chi2PCA to sec. vertex (cm)"};
       const AxisSpec thnAxisDecLength{thnConfigAxisDecLength, "decay length (cm)"};
       const AxisSpec thnAxisCPA{thnConfigAxisCPA, "cosine of pointing angle"};
@@ -282,25 +321,16 @@ struct HfTaskLc {
       const AxisSpec thnAxisBdtScoreLcNonPrompt{thnConfigAxisBdtScoreSignal, "BDT non-prompt score (Lc)"};
       const AxisSpec thnAxisCanType{thnConfigAxisCanType, "candidates type"};
 
-      if (doprocessDataWithMl || doprocessDataWithMlWithFT0C || doprocessDataWithMlWithFT0M || doprocessMcWithMl || doprocessMcWithMlWithFT0C || doprocessMcWithMlWithFT0M) {
-        registry.add("hnLcVarsWithBdt", "THn for Lambdac candidates with BDT scores", HistType::kTHnSparseF, {thnAxisMass, thnAxisPt, thnAxisCentrality, thnAxisBdtScoreLcBkg, thnAxisBdtScoreLcPrompt, thnAxisBdtScoreLcNonPrompt, thnAxisCanType});
+      if (doprocessDataWithMl || doprocessMcWithMl) {
+        registry.add("hnLcVarsWithBdt", "THn for Lambdac candidates with BDT scores", HistType::kTHnSparseF, {thnAxisMass, thnAxisPt, thnAxisMultiplicity, thnAxisBdtScoreLcBkg, thnAxisBdtScoreLcPrompt, thnAxisBdtScoreLcNonPrompt, thnAxisCanType});
       } else {
-        registry.add("hnLcVars", "THn for Lambdac candidates", HistType::kTHnSparseF, {thnAxisMass, thnAxisPt, thnAxisCentrality, thnAxisPtProng0, thnAxisPtProng1, thnAxisPtProng2, thnAxisChi2PCA, thnAxisDecLength, thnAxisCPA, thnAxisCanType});
+        registry.add("hnLcVars", "THn for Lambdac candidates", HistType::kTHnSparseF, {thnAxisMass, thnAxisPt, thnAxisMultiplicity, thnAxisPtProng0, thnAxisPtProng1, thnAxisPtProng2, thnAxisChi2PCA, thnAxisDecLength, thnAxisCPA, thnAxisCanType});
       }
     }
   }
 
-  /// Evaluate centrality/multiplicity percentile (centrality estimator is automatically selected based on the used table)
-  /// \param candidate is candidate
-  /// \return centrality/multiplicity percentile of the collision
-  template <typename Coll>
-  float evaluateCentralityColl(const Coll& collision)
-  {
-    return o2::hf_centrality::getCentralityColl<Coll>(collision);
-  }
-
-  template <bool fillMl, typename CollType, typename CandType>
-  void processData(CollType const& collision,
+  template <bool fillMl, typename CandType>
+  void processData(aod::Collision const& collision,
                    CandType const& candidates,
                    aod::TracksWDca const& tracks)
   {
@@ -379,7 +409,6 @@ struct HfTaskLc {
       registry.fill(HIST("Data/hDecLenErr"), candidate.errorDecayLength(), pt);
 
       if (enableTHn) {
-        float cent = evaluateCentralityColl(collision);
         double massLc(-1);
         double outputBkg(-1), outputPrompt(-1), outputFD(-1);
         if (candidate.isSelLcToPKPi() >= selectionFlagLc) {
@@ -394,9 +423,9 @@ struct HfTaskLc {
               outputFD = candidate.mlProbLcToPKPi()[2];     /// non-prompt score
             }
             /// Fill the ML outputScores and variables of candidate
-            registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, cent, outputBkg, outputPrompt, outputFD, 0);
+            registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, nTracks, outputBkg, outputPrompt, outputFD, 0);
           } else {
-            registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, cent, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, 0);
+            registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, nTracks, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, 0);
           }
         }
         if (candidate.isSelLcToPiKP() >= selectionFlagLc) {
@@ -411,16 +440,16 @@ struct HfTaskLc {
               outputFD = candidate.mlProbLcToPiKP()[2];     /// non-prompt score
             }
             /// Fill the ML outputScores and variables of candidate
-            registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, cent, outputBkg, outputPrompt, outputFD, 0);
+            registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, nTracks, outputBkg, outputPrompt, outputFD, 0);
           } else {
-            registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, cent, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, 0);
+            registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, nTracks, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, 0);
           }
         }
       }
     }
   }
 
-  void processDataStd(Collisions const& collision,
+  void processDataStd(aod::Collision const& collision,
                       LcCandidates const& selectedLcCandidates,
                       aod::TracksWDca const& tracks)
   {
@@ -428,7 +457,7 @@ struct HfTaskLc {
   }
   PROCESS_SWITCH(HfTaskLc, processDataStd, "Process Data with the standard method", true);
 
-  void processDataWithMl(Collisions const& collision,
+  void processDataWithMl(aod::Collision const& collision,
                          LcCandidatesMl const& selectedLcCandidatesMl,
                          aod::TracksWDca const& tracks)
   {
@@ -436,42 +465,9 @@ struct HfTaskLc {
   }
   PROCESS_SWITCH(HfTaskLc, processDataWithMl, "Process Data with the ML method", false);
 
-  void processDataStdWithFT0C(CollisionsWithFT0C const& collision,
-                              LcCandidates const& selectedLcCandidates,
-                              aod::TracksWDca const& tracks)
-  {
-    processData<false>(collision, selectedLcCandidates, tracks);
-  }
-  PROCESS_SWITCH(HfTaskLc, processDataStdWithFT0C, "Process Data with the standard method", true);
-
-  void processDataWithMlWithFT0C(CollisionsWithFT0C const& collision,
-                                 LcCandidatesMl const& selectedLcCandidatesMl,
-                                 aod::TracksWDca const& tracks)
-  {
-    processData<true>(collision, selectedLcCandidatesMl, tracks);
-  }
-  PROCESS_SWITCH(HfTaskLc, processDataWithMlWithFT0C, "Process Data with the ML method", false);
-
-  void processDataStdWithFT0M(CollisionsWithFT0M const& collision,
-                              LcCandidates const& selectedLcCandidates,
-                              aod::TracksWDca const& tracks)
-  {
-    processData<false>(collision, selectedLcCandidates, tracks);
-  }
-  PROCESS_SWITCH(HfTaskLc, processDataStdWithFT0M, "Process Data with the standard method", true);
-
-  void processDataWithMlWithFT0M(CollisionsWithFT0M const& collision,
-                                 LcCandidatesMl const& selectedLcCandidatesMl,
-                                 aod::TracksWDca const& tracks)
-  {
-    processData<true>(collision, selectedLcCandidatesMl, tracks);
-  }
-  PROCESS_SWITCH(HfTaskLc, processDataWithMlWithFT0M, "Process Data with the ML method", false);
-
   /// Fills MC histograms.
-  template <bool fillMl, typename CollType, typename CandType>
-  void processMc(CollType const& collision,
-                 CandType const& candidates,
+  template <bool fillMl, typename CandType>
+  void processMc(CandType const& candidates,
                  soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
                  aod::TracksWMc const&)
   {
@@ -480,29 +476,37 @@ struct HfTaskLc {
       if (!(candidate.hfflag() & 1 << aod::hf_cand_3prong::DecayType::LcToPKPi)) {
         continue;
       }
+      auto y = hfHelper.yLc(candidate);
       /// rapidity selection
-      if (yCandRecoMax >= 0. && std::abs(hfHelper.yLc(candidate)) > yCandRecoMax) {
+      if (yCandRecoMax >= 0. && std::abs(y) > yCandRecoMax) {
         continue;
       }
 
-      if (std::abs(candidate.flagMcMatchRec()) == 1 << aod::hf_cand_3prong::DecayType::LcToPKPi) {
-        // Get the corresponding MC particle.
-        auto mcParticleProng0 = candidate.template prong0_as<aod::TracksWMc>().template mcParticle_as<soa::Join<aod::McParticles, aod::HfCand3ProngMcGen>>();
-        auto pdgCodeProng0 = std::abs(mcParticleProng0.pdgCode());
-        auto indexMother = RecoDecay::getMother(mcParticles, mcParticleProng0, o2::constants::physics::Pdg::kLambdaCPlus, true);
-        auto particleMother = mcParticles.rawIteratorAt(indexMother);
-        registry.fill(HIST("MC/generated/signal/hPtGenSig"), particleMother.pt()); // gen. level pT
+      // Get the corresponding MC particle.
+      auto mcParticleProng0 = candidate.template prong0_as<aod::TracksWMc>().template mcParticle_as<soa::Join<aod::McParticles, aod::HfCand3ProngMcGen>>();
+      auto pdgCodeProng0 = std::abs(mcParticleProng0.pdgCode());
+      auto indexMother = RecoDecay::getMother(mcParticles, mcParticleProng0, o2::constants::physics::Pdg::kLambdaCPlus, true);
+      auto particleMother = mcParticles.rawIteratorAt(indexMother);
+      auto pt = candidate.pt();
+      auto ptProng0 = candidate.ptProng0();
+      auto ptProng1 = candidate.ptProng1();
+      auto ptProng2 = candidate.ptProng2();
+      auto decayLength = candidate.decayLength();
+      auto decayLengthXY = candidate.decayLengthXY();
+      auto chi2PCA = candidate.chi2PCA();
+      auto cpa = candidate.cpa();
+      auto cpaXY = candidate.cpaXY();
+      auto originType = candidate.originMcRec();
 
-        auto pt = candidate.pt();
-        auto ptProng0 = candidate.ptProng0();
-        auto ptProng1 = candidate.ptProng1();
-        auto ptProng2 = candidate.ptProng2();
-        auto decayLength = candidate.decayLength();
-        auto decayLengthXY = candidate.decayLengthXY();
-        auto chi2PCA = candidate.chi2PCA();
-        auto cpa = candidate.cpa();
-        auto cpaXY = candidate.cpaXY();
-        auto originType = candidate.originMcRec();
+      if (std::abs(candidate.flagMcMatchRec()) == 1 << aod::hf_cand_3prong::DecayType::LcToPKPi) {
+
+        auto pt_gen = particleMother.pt();
+        auto pt_residual = pt - pt_gen;
+        auto pt_residual2 = pt_residual*pt_residual;
+        registry.fill(HIST("MC/generated/signal/hPtGenSig"), pt_gen); // gen. level pT
+        registry.fill(HIST("MC/reconstructed/signal/hPtResidualSig"), pt_residual);
+        registry.fill(HIST("MC/reconstructed/signal/hPtResidual2VsPtSig"), pt, pt_residual);
+
         /// MC reconstructed signal
         if ((candidate.isSelLcToPKPi() >= selectionFlagLc) && pdgCodeProng0 == kProton) {
           registry.fill(HIST("MC/reconstructed/signal/hMassRecSig"), hfHelper.invMassLcToPKPi(candidate));
@@ -536,6 +540,7 @@ struct HfTaskLc {
         registry.fill(HIST("MC/reconstructed/signal/hDca2RecSig"), chi2PCA);
         registry.fill(HIST("MC/reconstructed/signal/hDca2VsPtRecSig"), chi2PCA, pt);
         registry.fill(HIST("MC/reconstructed/signal/hEtaRecSig"), candidate.eta());
+        registry.fill(HIST("MC/reconstructed/signal/hYRecSig"), y);
         registry.fill(HIST("MC/reconstructed/signal/hEtaVsPtRecSig"), candidate.eta(), pt);
         registry.fill(HIST("MC/reconstructed/signal/hPhiRecSig"), candidate.phi());
         registry.fill(HIST("MC/reconstructed/signal/hPhiVsPtRecSig"), candidate.phi(), pt);
@@ -549,12 +554,14 @@ struct HfTaskLc {
           if ((candidate.isSelLcToPKPi() >= selectionFlagLc) && pdgCodeProng0 == kProton) {
             registry.fill(HIST("MC/reconstructed/prompt/hMassRecSigPrompt"), hfHelper.invMassLcToPKPi(candidate));
             registry.fill(HIST("MC/reconstructed/prompt/hMassVsPtRecSigPrompt"), hfHelper.invMassLcToPKPi(candidate), pt);
+            registry.fill(HIST("MC/reconstructed/prompt/hPtResidual2VsPtSigPrompt"), pt, pt_residual);
           }
           if ((candidate.isSelLcToPiKP() >= selectionFlagLc) && pdgCodeProng0 == kPiPlus) {
             registry.fill(HIST("MC/reconstructed/prompt/hMassRecSigPrompt"), hfHelper.invMassLcToPiKP(candidate));
             registry.fill(HIST("MC/reconstructed/prompt/hMassVsPtRecSigPrompt"), hfHelper.invMassLcToPiKP(candidate), pt);
           }
           registry.fill(HIST("MC/reconstructed/prompt/hPtRecSigPrompt"), pt);
+          registry.fill(HIST("MC/reconstructed/prompt/hPtResidualSigPrompt"), pt_residual);
           registry.fill(HIST("MC/reconstructed/prompt/hPtRecProng0SigPrompt"), ptProng0);
           registry.fill(HIST("MC/reconstructed/prompt/hPtRecProng1SigPrompt"), ptProng1);
           registry.fill(HIST("MC/reconstructed/prompt/hPtRecProng2SigPrompt"), ptProng2);
@@ -577,6 +584,7 @@ struct HfTaskLc {
           registry.fill(HIST("MC/reconstructed/prompt/hDca2RecSigPrompt"), chi2PCA);
           registry.fill(HIST("MC/reconstructed/prompt/hDca2VsPtRecSigPrompt"), chi2PCA, pt);
           registry.fill(HIST("MC/reconstructed/prompt/hEtaRecSigPrompt"), candidate.eta());
+          registry.fill(HIST("MC/reconstructed/prompt/hYRecSigPrompt"), y);
           registry.fill(HIST("MC/reconstructed/prompt/hEtaVsPtRecSigPrompt"), candidate.eta(), pt);
           registry.fill(HIST("MC/reconstructed/prompt/hPhiRecSigPrompt"), candidate.phi());
           registry.fill(HIST("MC/reconstructed/prompt/hPhiVsPtRecSigPrompt"), candidate.phi(), pt);
@@ -594,6 +602,8 @@ struct HfTaskLc {
             registry.fill(HIST("MC/reconstructed/nonprompt/hMassVsPtRecSigNonPrompt"), hfHelper.invMassLcToPiKP(candidate), pt);
           }
           registry.fill(HIST("MC/reconstructed/nonprompt/hPtRecSigNonPrompt"), pt);
+          registry.fill(HIST("MC/reconstructed/nonprompt/hPtResidualSigNonPrompt"), pt_residual);
+          registry.fill(HIST("MC/reconstructed/nonprompt/hPtResidual2VsPtSigNonPrompt"), pt, pt_residual);
           registry.fill(HIST("MC/reconstructed/nonprompt/hPtRecProng0SigNonPrompt"), ptProng0);
           registry.fill(HIST("MC/reconstructed/nonprompt/hPtRecProng1SigNonPrompt"), ptProng1);
           registry.fill(HIST("MC/reconstructed/nonprompt/hPtRecProng2SigNonPrompt"), ptProng2);
@@ -616,6 +626,7 @@ struct HfTaskLc {
           registry.fill(HIST("MC/reconstructed/nonprompt/hDca2RecSigNonPrompt"), chi2PCA);
           registry.fill(HIST("MC/reconstructed/nonprompt/hDca2VsPtRecSigNonPrompt"), chi2PCA, pt);
           registry.fill(HIST("MC/reconstructed/nonprompt/hEtaRecSigNonPrompt"), candidate.eta());
+          registry.fill(HIST("MC/reconstructed/nonprompt/hYRecSigNonPrompt"), y);
           registry.fill(HIST("MC/reconstructed/nonprompt/hEtaVsPtRecSigNonPrompt"), candidate.eta(), pt);
           registry.fill(HIST("MC/reconstructed/nonprompt/hPhiRecSigNonPrompt"), candidate.phi());
           registry.fill(HIST("MC/reconstructed/nonprompt/hPhiVsPtRecSigNonPrompt"), candidate.phi(), pt);
@@ -625,7 +636,6 @@ struct HfTaskLc {
           registry.fill(HIST("MC/reconstructed/nonprompt/hDecLenErrSigNonPrompt"), candidate.errorDecayLength(), pt);
         }
         if (enableTHn) {
-          float cent = evaluateCentralityColl(collision);
           double massLc(-1);
           double outputBkg(-1), outputPrompt(-1), outputFD(-1);
           if ((candidate.isSelLcToPKPi() >= selectionFlagLc) && pdgCodeProng0 == kProton) {
@@ -639,10 +649,10 @@ struct HfTaskLc {
                 outputPrompt = candidate.mlProbLcToPKPi()[1]; /// prompt score
                 outputFD = candidate.mlProbLcToPKPi()[2];     /// non-prompt score
               }
-              /// Fill the ML outputScores and variables of candidate
-              registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, cent, outputBkg, outputPrompt, outputFD, originType);
+              /// Fill the ML outputScores and variables of candidate (todo: add multiplicity)
+              registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, 0, outputBkg, outputPrompt, outputFD, originType);
             } else {
-              registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, cent, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, originType);
+              registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, 0, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, originType);
             }
           }
           if ((candidate.isSelLcToPiKP() >= selectionFlagLc) && pdgCodeProng0 == kPiPlus) {
@@ -657,12 +667,52 @@ struct HfTaskLc {
                 outputFD = candidate.mlProbLcToPiKP()[2];     /// non-prompt score
               }
               /// Fill the ML outputScores and variables of candidate (todo: add multiplicity)
-              registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, cent, outputBkg, outputPrompt, outputFD, originType);
+              registry.get<THnSparse>(HIST("hnLcVarsWithBdt"))->Fill(massLc, pt, 0, outputBkg, outputPrompt, outputFD, originType);
             } else {
-              registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, cent, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, originType);
+              registry.get<THnSparse>(HIST("hnLcVars"))->Fill(massLc, pt, 0, ptProng0, ptProng1, ptProng2, chi2PCA, decayLength, cpa, originType);
             }
           }
         }
+      } else {
+        if ((candidate.isSelLcToPKPi() >= selectionFlagLc) && pdgCodeProng0 == kProton) {
+          registry.fill(HIST("MC/reconstructed/background/hMassRecBg"), hfHelper.invMassLcToPKPi(candidate));
+          registry.fill(HIST("MC/reconstructed/background/hMassVsPtRecBg"), hfHelper.invMassLcToPKPi(candidate), pt);
+        }
+        if ((candidate.isSelLcToPiKP() >= selectionFlagLc) && pdgCodeProng0 == kPiPlus) {
+          registry.fill(HIST("MC/reconstructed/background/hMassRecBg"), hfHelper.invMassLcToPiKP(candidate));
+          registry.fill(HIST("MC/reconstructed/background/hMassVsPtRecBg"), hfHelper.invMassLcToPiKP(candidate), pt);
+        }
+        registry.fill(HIST("MC/reconstructed/background/hPtRecBg"), pt);
+        registry.fill(HIST("MC/reconstructed/background/hPtRecProng0Bg"), ptProng0);
+        registry.fill(HIST("MC/reconstructed/background/hPtRecProng1Bg"), ptProng1);
+        registry.fill(HIST("MC/reconstructed/background/hPtRecProng2Bg"), ptProng2);
+        registry.fill(HIST("MC/reconstructed/background/hd0RecProng0Bg"), candidate.impactParameter0());
+        registry.fill(HIST("MC/reconstructed/background/hd0RecProng1Bg"), candidate.impactParameter1());
+        registry.fill(HIST("MC/reconstructed/background/hd0RecProng2Bg"), candidate.impactParameter2());
+        registry.fill(HIST("MC/reconstructed/background/hd0VsPtRecProng0Bg"), candidate.impactParameter0(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hd0VsPtRecProng1Bg"), candidate.impactParameter1(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hd0VsPtRecProng2Bg"), candidate.impactParameter2(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hDecLengthRecBg"), decayLength);
+        registry.fill(HIST("MC/reconstructed/background/hDecLengthVsPtRecBg"), decayLength, pt);
+        registry.fill(HIST("MC/reconstructed/background/hDecLengthxyRecBg"), decayLengthXY);
+        registry.fill(HIST("MC/reconstructed/background/hDecLengthxyVsPtRecBg"), decayLengthXY, pt);
+        registry.fill(HIST("MC/reconstructed/background/hCtRecBg"), hfHelper.ctLc(candidate));
+        registry.fill(HIST("MC/reconstructed/background/hCtVsPtRecBg"), hfHelper.ctLc(candidate), pt);
+        registry.fill(HIST("MC/reconstructed/background/hCPARecBg"), cpa);
+        registry.fill(HIST("MC/reconstructed/background/hCPAVsPtRecBg"), cpa, pt);
+        registry.fill(HIST("MC/reconstructed/background/hCPAxyRecBg"), cpaXY);
+        registry.fill(HIST("MC/reconstructed/background/hCPAxyVsPtRecBg"), cpaXY, pt);
+        registry.fill(HIST("MC/reconstructed/background/hDca2RecBg"), chi2PCA);
+        registry.fill(HIST("MC/reconstructed/background/hDca2VsPtRecBg"), chi2PCA, pt);
+        registry.fill(HIST("MC/reconstructed/background/hEtaRecBg"), candidate.eta());
+        registry.fill(HIST("MC/reconstructed/background/hYRecBg"), y);
+        registry.fill(HIST("MC/reconstructed/background/hEtaVsPtRecBg"), candidate.eta(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hPhiRecBg"), candidate.phi());
+        registry.fill(HIST("MC/reconstructed/background/hPhiVsPtRecBg"), candidate.phi(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hImpParErrProng0Bg"), candidate.errorImpactParameter0(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hImpParErrProng1Bg"), candidate.errorImpactParameter1(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hImpParErrProng2Bg"), candidate.errorImpactParameter2(), pt);
+        registry.fill(HIST("MC/reconstructed/background/hDecLenErrBg"), candidate.errorDecayLength(), pt);
       }
     }
 
@@ -704,59 +754,21 @@ struct HfTaskLc {
     }
   }
 
-  void processMcStd(CollisionsMc const& collision,
-                    LcCandidatesMc const& selectedLcCandidatesMc,
+  void processMcStd(LcCandidatesMc const& selectedLcCandidatesMc,
                     soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
                     aod::TracksWMc const& tracksWithMc)
   {
-    processMc<false>(collision, selectedLcCandidatesMc, mcParticles, tracksWithMc);
+    processMc<false>(selectedLcCandidatesMc, mcParticles, tracksWithMc);
   }
   PROCESS_SWITCH(HfTaskLc, processMcStd, "Process MC with the standard method", false);
 
-  void processMcWithMl(CollisionsMc const& collision,
-                       LcCandidatesMlMc const& selectedLcCandidatesMlMc,
+  void processMcWithMl(LcCandidatesMlMc const& selectedLcCandidatesMlMc,
                        soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
                        aod::TracksWMc const& tracksWithMc)
   {
-    processMc<true>(collision, selectedLcCandidatesMlMc, mcParticles, tracksWithMc);
+    processMc<true>(selectedLcCandidatesMlMc, mcParticles, tracksWithMc);
   }
   PROCESS_SWITCH(HfTaskLc, processMcWithMl, "Process Mc with the ML method", false);
-
-  void processMcStdWithFT0C(CollisionsMcWithFT0C const& collision,
-                            LcCandidatesMc const& selectedLcCandidatesMc,
-                            soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
-                            aod::TracksWMc const& tracksWithMc)
-  {
-    processMc<false>(collision, selectedLcCandidatesMc, mcParticles, tracksWithMc);
-  }
-  PROCESS_SWITCH(HfTaskLc, processMcStdWithFT0C, "Process MC with the standard method", false);
-
-  void processMcWithMlWithFT0C(CollisionsMcWithFT0C const& collision,
-                               LcCandidatesMlMc const& selectedLcCandidatesMlMc,
-                               soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
-                               aod::TracksWMc const& tracksWithMc)
-  {
-    processMc<true>(collision, selectedLcCandidatesMlMc, mcParticles, tracksWithMc);
-  }
-  PROCESS_SWITCH(HfTaskLc, processMcWithMlWithFT0C, "Process Mc with the ML method", false);
-
-  void processMcStdWithFT0M(CollisionsMcWithFT0M const& collision,
-                            LcCandidatesMc const& selectedLcCandidatesMc,
-                            soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
-                            aod::TracksWMc const& tracksWithMc)
-  {
-    processMc<false>(collision, selectedLcCandidatesMc, mcParticles, tracksWithMc);
-  }
-  PROCESS_SWITCH(HfTaskLc, processMcStdWithFT0M, "Process MC with the standard method", false);
-
-  void processMcWithMlWithFT0M(CollisionsMcWithFT0M const& collision,
-                               LcCandidatesMlMc const& selectedLcCandidatesMlMc,
-                               soa::Join<aod::McParticles, aod::HfCand3ProngMcGen> const& mcParticles,
-                               aod::TracksWMc const& tracksWithMc)
-  {
-    processMc<true>(collision, selectedLcCandidatesMlMc, mcParticles, tracksWithMc);
-  }
-  PROCESS_SWITCH(HfTaskLc, processMcWithMlWithFT0M, "Process Mc with the ML method", false);
 };
 
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)

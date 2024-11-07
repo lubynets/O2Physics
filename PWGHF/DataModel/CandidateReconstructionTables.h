@@ -435,6 +435,7 @@ DECLARE_SOA_COLUMN(Chi2PCA, chi2PCA, float); //! sum of (non-weighted) distances
 DECLARE_SOA_COLUMN(PxProng0, pxProng0, float); //!
 DECLARE_SOA_COLUMN(PyProng0, pyProng0, float); //!
 DECLARE_SOA_COLUMN(PzProng0, pzProng0, float); //!
+DECLARE_SOA_COLUMN(Sigma2PtInvProng0, sigma2PtInvProng0, float); //! squared error of inverted transverse momentum
 DECLARE_SOA_DYNAMIC_COLUMN(PtProng0, ptProng0, //!
                            [](float px, float py) -> float { return RecoDecay::pt(px, py); });
 DECLARE_SOA_DYNAMIC_COLUMN(Pt2Prong0, pt2Prong0, //!
@@ -452,6 +453,7 @@ DECLARE_SOA_DYNAMIC_COLUMN(ImpactParameterZNormalised0, impactParameterZNormalis
 DECLARE_SOA_COLUMN(PxProng1, pxProng1, float); //!
 DECLARE_SOA_COLUMN(PyProng1, pyProng1, float); //!
 DECLARE_SOA_COLUMN(PzProng1, pzProng1, float); //!
+DECLARE_SOA_COLUMN(Sigma2PtInvProng1, sigma2PtInvProng1, float); //! squared error of inverted transverse momentum
 DECLARE_SOA_DYNAMIC_COLUMN(PtProng1, ptProng1, //!
                            [](float px, float py) -> float { return RecoDecay::pt(px, py); });
 DECLARE_SOA_DYNAMIC_COLUMN(Pt2Prong1, pt2Prong1, //!
@@ -469,6 +471,7 @@ DECLARE_SOA_DYNAMIC_COLUMN(ImpactParameterZNormalised1, impactParameterZNormalis
 DECLARE_SOA_COLUMN(PxProng2, pxProng2, float); //!
 DECLARE_SOA_COLUMN(PyProng2, pyProng2, float); //!
 DECLARE_SOA_COLUMN(PzProng2, pzProng2, float); //!
+DECLARE_SOA_COLUMN(Sigma2PtInvProng2, sigma2PtInvProng2, float); //! squared error of inverted transverse momentum
 DECLARE_SOA_DYNAMIC_COLUMN(PtProng2, ptProng2, //!
                            [](float px, float py) -> float { return RecoDecay::pt(px, py); });
 DECLARE_SOA_DYNAMIC_COLUMN(Pt2Prong2, pt2Prong2, //!
@@ -963,6 +966,7 @@ DECLARE_SOA_TABLE(HfCand3ProngBase, "AOD", "HFCAND3PBASE", //!
                   hf_cand::PxProng0, hf_cand::PyProng0, hf_cand::PzProng0,
                   hf_cand::PxProng1, hf_cand::PyProng1, hf_cand::PzProng1,
                   hf_cand::PxProng2, hf_cand::PyProng2, hf_cand::PzProng2,
+                  hf_cand::Sigma2PtInvProng0, hf_cand::Sigma2PtInvProng1, hf_cand::Sigma2PtInvProng2,
                   hf_cand::ImpactParameter0, hf_cand::ImpactParameter1, hf_cand::ImpactParameter2,
                   hf_cand::ErrorImpactParameter0, hf_cand::ErrorImpactParameter1, hf_cand::ErrorImpactParameter2,
                   hf_cand::ImpactParameterZ0, hf_cand::ImpactParameterZ1, hf_cand::ImpactParameterZ2,

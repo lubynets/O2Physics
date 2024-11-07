@@ -37,6 +37,7 @@ struct HfCandidateSelectorD0 {
   Produces<aod::HfSelD0> hfSelD0Candidate;
   Produces<aod::HfMlD0> hfMlD0Candidate;
 
+  Configurable<bool> isVerbose{"isVerbose", false, "Verbosity switch"};
   Configurable<double> ptCandMin{"ptCandMin", 0., "Lower bound of candidate pT"};
   Configurable<double> ptCandMax{"ptCandMax", 50., "Upper bound of candidate pT"};
   Configurable<bool> usePid{"usePid", true, "Use PID selection"};
@@ -135,34 +136,42 @@ struct HfCandidateSelectorD0 {
   template <int reconstructionType, typename T>
   bool selectionTopol(const T& candidate)
   {
+    if(isVerbose) LOG(info) << "selectionTopol()";
     auto candpT = candidate.pt();
     auto pTBin = findBin(binsPt, candpT);
     if (pTBin == -1) {
+      if(isVerbose) LOG(info) << "pTBin == -1";
       return false;
     }
 
     // check that the candidate pT is within the analysis range
     if (candpT < ptCandMin || candpT >= ptCandMax) {
+      if(isVerbose) LOG(info) << "candpT < ptCandMin || candpT >= ptCandMax";
       return false;
     }
     // product of daughter impact parameters
-    if (candidate.impactParameterProduct() > cuts->get(pTBin, "d0d0")) {
-      return false;
-    }
+//     if (cuts->get(pTBin, "d0d0") > 0 && candidate.impactParameterProduct() > cuts->get(pTBin, "d0d0")) {
+//       if(isVerbose) LOG(info) << "candidate.impactParameterProduct() > cuts->get(pTBin, \"d0d0\")";
+//       return false;
+//     }
     // cosine of pointing angle
     if (candidate.cpa() < cuts->get(pTBin, "cos pointing angle")) {
+      if(isVerbose) LOG(info) << "candidate.cpa() < cuts->get(pTBin, \"cos pointing angle\")";
       return false;
     }
     // cosine of pointing angle XY
     if (candidate.cpaXY() < cuts->get(pTBin, "cos pointing angle xy")) {
+      if(isVerbose) LOG(info) << "candidate.cpaXY() < cuts->get(pTBin, \"cos pointing angle xy\")";
       return false;
     }
     // normalised decay length in XY plane
     if (candidate.decayLengthXYNormalised() < cuts->get(pTBin, "min norm decay length XY")) {
+      if(isVerbose) LOG(info) << "candidate.decayLengthXYNormalised() < cuts->get(pTBin, \"min norm decay length XY\")";
       return false;
     }
     // candidate DCA
     if (std::abs(candidate.impactParameterXY()) > cuts->get(pTBin, "DCA")) {
+      if(isVerbose) LOG(info) << "candidate.impactParameterXY()) > cuts->get(pTBin, \"DCA\")";
       return false;
     }
 
@@ -171,18 +180,23 @@ struct HfCandidateSelectorD0 {
     //   if (candidate.kfTopolChi2OverNdf() > cuts->get(pTBin, "topological chi2overndf as D0")) return false;
     // }
     if (std::abs(candidate.impactParameterNormalised0()) < cuts->get(pTBin, "norm dauImpPar XY") || std::abs(candidate.impactParameterNormalised1()) < cuts->get(pTBin, "norm dauImpPar XY")) {
+      if(isVerbose) LOG(info) << "std::abs(candidate.impactParameterNormalised0()) < cuts->get(pTBin, \"norm dauImpPar XY\") || std::abs(candidate.impactParameterNormalised1()) < cuts->get(pTBin, \"norm dauImpPar XY\")";
       return false;
     }
     if (candidate.decayLength() < cuts->get(pTBin, "min decay length")) {
+      if(isVerbose) LOG(info) << "candidate.decayLength() < cuts->get(pTBin, \"min decay length\")";
       return false;
     }
     if (candidate.decayLength() > cuts->get(pTBin, "max decay length")) {
+      if(isVerbose) LOG(info) << "candidate.decayLength() > cuts->get(pTBin, \"max decay length\")";
       return false;
     }
     if (candidate.decayLengthXY() > cuts->get(pTBin, "max decay length XY")) {
+      if(isVerbose) LOG(info) << "candidate.decayLengthXY() > cuts->get(pTBin, \"max decay length XY\")";
       return false;
     }
 
+    if(isVerbose) LOG(info) << "return true";
     return true;
   }
 
@@ -267,6 +281,9 @@ struct HfCandidateSelectorD0 {
   void processSel(CandType const& candidates,
                   TracksSel const&)
   {
+    if(isVerbose) {
+      LOG(info) << "processSel(), candidates.size() = " << candidates.size();
+    }
     // looping over 2-prong candidates
     for (const auto& candidate : candidates) {
 
@@ -282,6 +299,10 @@ struct HfCandidateSelectorD0 {
       outputMlD0bar.clear();
 
       if (!(candidate.hfflag() & 1 << aod::hf_cand_2prong::DecayType::D0ToPiK)) {
+        if(isVerbose) {
+//           LOG(info) << "candidate.hfflag() = " << (int)candidate.hfflag();
+//           LOG(info) << "case 1 " << statusD0 << "\t" << statusD0bar << "\t" << statusHFFlag << "\t" << statusTopol << "\t" << statusCand << "\t" << statusPID;
+        }
         hfSelD0Candidate(statusD0, statusD0bar, statusHFFlag, statusTopol, statusCand, statusPID);
         if (applyMl) {
           hfMlD0Candidate(outputMlD0, outputMlD0bar);
@@ -296,6 +317,7 @@ struct HfCandidateSelectorD0 {
 
       // conjugate-independent topological selection
       if (!selectionTopol<reconstructionType>(candidate)) {
+//         if(isVerbose) LOG(info) << "case 2 " << statusD0 << "\t" << statusD0bar << "\t" << statusHFFlag << "\t" << statusTopol << "\t" << statusCand << "\t" << statusPID;
         hfSelD0Candidate(statusD0, statusD0bar, statusHFFlag, statusTopol, statusCand, statusPID);
         if (applyMl) {
           hfMlD0Candidate(outputMlD0, outputMlD0bar);
@@ -313,6 +335,7 @@ struct HfCandidateSelectorD0 {
       bool topolD0bar = selectionTopolConjugate<reconstructionType>(candidate, trackNeg, trackPos);
 
       if (!topolD0 && !topolD0bar) {
+        if(isVerbose) LOG(info) << "case 3 " << statusD0 << "\t" << statusD0bar << "\t" << statusHFFlag << "\t" << statusTopol << "\t" << statusCand << "\t" << statusPID;
         hfSelD0Candidate(statusD0, statusD0bar, statusHFFlag, statusTopol, statusCand, statusPID);
         if (applyMl) {
           hfMlD0Candidate(outputMlD0, outputMlD0bar);
@@ -379,6 +402,7 @@ struct HfCandidateSelectorD0 {
         }
 
         if (pidD0 == 0 && pidD0bar == 0) {
+          if(isVerbose) LOG(info) << "case 4 " << statusD0 << "\t" << statusD0bar << "\t" << statusHFFlag << "\t" << statusTopol << "\t" << statusCand << "\t" << statusPID;
           hfSelD0Candidate(statusD0, statusD0bar, statusHFFlag, statusTopol, statusCand, statusPID);
           if (applyMl) {
             hfMlD0Candidate(outputMlD0, outputMlD0bar);
@@ -440,6 +464,7 @@ struct HfCandidateSelectorD0 {
           }
         }
       }
+      if(isVerbose) LOG(info) << "case 5 " << statusD0 << "\t" << statusD0bar << "\t" << statusHFFlag << "\t" << statusTopol << "\t" << statusCand << "\t" << statusPID;
       hfSelD0Candidate(statusD0, statusD0bar, statusHFFlag, statusTopol, statusCand, statusPID);
     }
   }
