@@ -40,6 +40,7 @@ enum CandTypeSel {
 };
 } // namespace
 struct HfTaskD0 {
+  Configurable<bool> isVerbose{"isVerbose", false, "Verbosity switch"};
   Configurable<int> selectionFlagD0{"selectionFlagD0", 1, "Selection Flag for D0"};
   Configurable<int> selectionFlagD0bar{"selectionFlagD0bar", 1, "Selection Flag for D0bar"};
   Configurable<double> yCandGenMax{"yCandGenMax", 0.5, "max. gen particle rapidity"};
@@ -161,7 +162,13 @@ struct HfTaskD0 {
      {"hMassSigD0bar", "2-prong candidates (matched);#it{m}_{inv} (GeV/#it{c}^{2}); #it{p}_{T}; #it{y}", {HistType::kTH3F, {{120, 1.5848, 2.1848}, {150, 0., 30.}, {20, -5., 5.}}}},
      {"hMassBkgD0bar", "2-prong candidates (checked);#it{m}_{inv} (GeV/#it{c}^{2}); #it{p}_{T}; #it{y}", {HistType::kTH3F, {{120, 1.5848, 2.1848}, {150, 0., 30.}, {20, -5., 5.}}}},
      {"hMassReflBkgD0bar", "2-prong candidates (matched);#it{m}_{inv} (GeV/#it{c}^{2}); #it{p}_{T}; #it{y}", {HistType::kTH3F, {{120, 1.5848, 2.1848}, {150, 0., 30.}, {20, -5., 5.}}}},
-     {"hMassSigBkgD0bar", "2-prong candidates (not checked);#it{m}_{inv} (GeV/#it{c}^{2}); #it{p}_{T}; #it{y}", {HistType::kTH3F, {{120, 1.5848, 2.1848}, {150, 0., 30.}, {20, -5., 5.}}}}}};
+     {"hMassSigBkgD0bar", "2-prong candidates (not checked);#it{m}_{inv} (GeV/#it{c}^{2}); #it{p}_{T}; #it{y}", {HistType::kTH3F, {{120, 1.5848, 2.1848}, {150, 0., 30.}, {20, -5., 5.}}}},
+
+     {"hMassRecSig", "2-prong candidates (matched);m_{inv}(#pi K) (GeV/#it{c^{2}});entries", {HistType::kTH1F, {{600, 1.6, 2.2}}}},
+     {"hMassRecSigPrompt", "2-prong candidates (matched, prompt);m_{inv}(#pi K) (GeV/#it{c^{2}});entries", {HistType::kTH1F, {{600, 1.6, 2.2}}}},
+     {"hMassRecSigNonPrompt", "2-prong candidates (matched, non-prompt);m_{inv}(#pi K) (GeV/#it{c^{2}});entries", {HistType::kTH1F, {{600, 1.6, 2.2}}}},
+     {"hMassRecBg", "2-prong candidates (matched, non-prompt);m_{inv}(#pi K) (GeV/#it{c^{2}});entries", {HistType::kTH1F, {{600, 1.6, 2.2}}}}
+    }};
 
   void init(InitContext&)
   {
@@ -344,10 +351,22 @@ struct HfTaskD0 {
                  aod::TracksWMc const&)
   {
     // MC rec.
+    if(isVerbose) {
+      LOG(info) << "candidates.size() = " << candidates.size();
+      LOG(info) << "aod::hf_cand_2prong::DecayType::D0ToPiK = " << (int)aod::hf_cand_2prong::DecayType::D0ToPiK;
+    }
     for (const auto& candidate : candidates) {
+      if(isVerbose) {
+        LOG(info) << "candidate.hfflag() = " << (int)candidate.hfflag();
+        LOG(info) << "candidate.flagMcMatchRec() = " << (int)candidate.flagMcMatchRec();
+        LOG(info) << "candidate.isRecoHfFlag() = " << (int)candidate.isRecoHfFlag();
+        LOG(info) << "candidate.isSelD0() = " << (int)candidate.isSelD0();
+        LOG(info) << "candidate.isSelD0bar() = " << (int)candidate.isSelD0bar();
+      }
       if (!(candidate.hfflag() & 1 << aod::hf_cand_2prong::DecayType::D0ToPiK)) {
         continue;
       }
+      if(isVerbose) LOG(info) << "Passed candidate.hfflag() check";
       if (yCandRecoMax >= 0. && std::abs(hfHelper.yD0(candidate)) > yCandRecoMax) {
         continue;
       }
@@ -360,6 +379,7 @@ struct HfTaskD0 {
         massD0bar = hfHelper.invMassD0barToKPi(candidate);
       }
       if (std::abs(candidate.flagMcMatchRec()) == 1 << aod::hf_cand_2prong::DecayType::D0ToPiK) {
+        if(isVerbose) LOG(info) << "Passed candidate.flagMcMatchRec() check";
         // Get the corresponding MC particle.
         auto indexMother = RecoDecay::getMother(mcParticles, candidate.template prong0_as<aod::TracksWMc>().template mcParticle_as<soa::Join<aod::McParticles, aod::HfCand2ProngMcGen>>(), o2::constants::physics::Pdg::kD0, true);
         auto particleMother = mcParticles.rawIteratorAt(indexMother);
@@ -374,9 +394,11 @@ struct HfTaskD0 {
           registry.fill(HIST("hYGenVsYRecSig"), yGen, yRec);
           if (candidate.isSelD0() >= selectionFlagD0) {
             registry.fill(HIST("hMassVsPtGenVsPtRecSig"), massD0, ptGen, ptRec);
+            registry.fill(HIST("hMassRecSig"), massD0);
           }
           if (candidate.isSelD0bar() >= selectionFlagD0bar) {
             registry.fill(HIST("hMassVsPtGenVsPtRecSig"), massD0bar, ptGen, ptRec);
+            registry.fill(HIST("hMassRecSig"), massD0bar);
           }
         }
         if (candidate.isRecoTopol() >= selectionTopol) {
@@ -409,6 +431,12 @@ struct HfTaskD0 {
             registry.fill(HIST("hPtVsYRecSigPromptReco"), ptRec, yRec); // rec. level pT, prompt
             registry.fill(HIST("hPtRecSigPrompt"), ptRec);
           }
+          if (candidate.isSelD0() >= selectionFlagD0) {
+            registry.fill(HIST("hMassRecSigPrompt"), massD0);
+          }
+          if (candidate.isSelD0bar() >= selectionFlagD0bar) {
+            registry.fill(HIST("hMassRecSigPrompt"), massD0bar);
+          }
         } else {
           if (candidate.isRecoHfFlag() >= selectionFlagHf) {
             registry.fill(HIST("hPtVsYRecSigNonPromptRecoHFFlag"), ptRec, yRec);
@@ -426,6 +454,12 @@ struct HfTaskD0 {
             registry.fill(HIST("hPtVsYRecSigNonPromptReco"), ptRec, yRec); // rec. level pT, non-prompt
             registry.fill(HIST("hPtRecSigNonPrompt"), ptRec);
           }
+          if (candidate.isSelD0() >= selectionFlagD0) {
+            registry.fill(HIST("hMassRecSigNonPrompt"), massD0);
+          }
+          if (candidate.isSelD0bar() >= selectionFlagD0bar) {
+            registry.fill(HIST("hMassRecSigNonPrompt"), massD0bar);
+          }
         }
         registry.fill(HIST("hCPARecSig"), candidate.cpa());
         registry.fill(HIST("hEtaRecSig"), candidate.eta());
@@ -433,6 +467,12 @@ struct HfTaskD0 {
         registry.fill(HIST("hPtRecBg"), candidate.pt());
         registry.fill(HIST("hCPARecBg"), candidate.cpa());
         registry.fill(HIST("hEtaRecBg"), candidate.eta());
+        if (candidate.isSelD0() >= selectionFlagD0) {
+          registry.fill(HIST("hMassRecBg"), massD0);
+        }
+        if (candidate.isSelD0bar() >= selectionFlagD0bar) {
+          registry.fill(HIST("hMassRecBg"), massD0bar);
+        }
       }
       auto ptCandidate = candidate.pt();
       auto ptProng0 = candidate.ptProng0();
