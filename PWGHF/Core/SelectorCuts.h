@@ -463,6 +463,7 @@ namespace hf_cuts_lc_to_p_k_pi
 {
 static constexpr int nBinsPt = 10;
 static constexpr int nCutVars = 11;
+static constexpr int nKfCutVars = 12;
 // default values for the pT bin edges (can be used to configure histogram axis)
 // offset by 1 from the bin numbers in cuts array
 constexpr double binsPt[nBinsPt + 1] = {
@@ -491,6 +492,19 @@ constexpr double cuts[nBinsPt][nCutVars] = {{0.4, 0.4, 0.4, 0.4, 0., 0.005, 0., 
                                             {0.4, 0.4, 0.4, 0.4, 0., 0.005, 0., 0., 0., 1e+10, -1.},  /* 12 < pT < 24 */
                                             {0.4, 0.4, 0.4, 0.4, 0., 0.005, 0., 0., 0., 1e+10, -1.}}; /* 24 < pT < 36 */
 
+// default value for the cuts                    Chi2Prim      Chi2Geo       DCA, cm     Chi2Geo  Chi2Topo
+//                                               P   K  Pi  KPi PPi  PK  KPi    PPi   PK   ↓  LdL  ↓
+constexpr double kfCuts[nBinsPt][nKfCutVars] = {{3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 0  < pT < 1  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 1  < pT < 2  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 2  < pT < 3  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 3  < pT < 4  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 4  < pT < 5  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 5  < pT < 6  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 6  < pT < 8  */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 8  < pT < 12 */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.},  /* 12 < pT < 24 */
+                                                {3., 3., 3., 3., 3., 3., 0.01, 0.01, 0.01, 3., 5., 5.}}; /* 24 < pT < 36 */
+
 // row labels
 static const std::vector<std::string> labelsPt = {
   "pT bin 0",
@@ -506,6 +520,7 @@ static const std::vector<std::string> labelsPt = {
 
 // column labels
 static const std::vector<std::string> labelsCutVar = {"m", "pT p", "pT K", "pT Pi", "Chi2PCA", "decay length", "cos pointing angle", "decLengthXY", "normDecLXY", "impParXY", "mass (Kpi)"};
+static const std::vector<std::string> labelsKfCutVar = {"kfChi2PrimPr", "kfChi2PrimKa", "kfChi2PrimPi", "kfChi2GeoKaPi", "kfChi2GeoPrPi", "kfChi2GeoPrKa", "kfDcaKaPi", "kfDcaPrPi", "kfDcaPrKa", "kfChi2Geo", "kfLdL", "kfChi2Topo"};
 } // namespace hf_cuts_lc_to_p_k_pi
 
 namespace hf_cuts_lc_to_k0s_p
