@@ -1169,6 +1169,10 @@ struct LumiTask {
 
   void init(InitContext&)
   {
+    if (doprocessRun2 == doprocessRun3) {
+      LOGP(fatal, "One and only one process function must be enabled at a time.");
+    }
+
     histos.add("hCounterTVX", "", kTH1D, {{1, 0., 1.}});
     histos.add("hCounterTCE", "", kTH1D, {{1, 0., 1.}});
     histos.add("hCounterZEM", "", kTH1D, {{1, 0., 1.}});
