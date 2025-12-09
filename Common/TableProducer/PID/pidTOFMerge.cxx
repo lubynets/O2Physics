@@ -256,8 +256,8 @@ struct tofEventTime {
   static constexpr float kErrDiamond = kDiamond * 33.356409f;
   static constexpr float kWeightDiamond = 1.f / (kErrDiamond * kErrDiamond);
 
-  bool enableTableTOFEvTime = false;
-  bool enableTableEvTimeTOFOnly = false;
+  bool enableTableTOFEvTime = true;
+  bool enableTableEvTimeTOFOnly = true;
 
   // Event time configurations
   Configurable<float> minMomentum{"minMomentum", 0.5f, "Minimum momentum to select track sample for TOF event time"};
@@ -273,14 +273,14 @@ struct tofEventTime {
     LOG(debug) << "Initializing the tofEventTime task";
     tofResponse->initSetup(ccdb, initContext);
     // Checking that the table is requested in the workflow and enabling it
-    enableTableTOFEvTime = isTableRequiredInWorkflow(initContext, "TOFEvTime");
+    enableTableTOFEvTime = true;
 
     if (!enableTableTOFEvTime) {
       LOG(info) << "Table for TOF Event time (TOFEvTime) is not required, disabling it";
     }
     LOG(info) << "Table TOFEvTime enabled!";
 
-    enableTableEvTimeTOFOnly = isTableRequiredInWorkflow(initContext, "EvTimeTOFOnly");
+    enableTableEvTimeTOFOnly = true;
     if (enableTableEvTimeTOFOnly) {
       LOG(info) << "Table EvTimeTOFOnly enabled!";
     }
@@ -611,7 +611,7 @@ struct tofPidMerge {
   bool enableTableMass = false;
 
   Configurable<bool> enableQaHistograms{"enableQaHistograms", false, "Flag to enable the QA histograms"};
-  Configurable<bool> enableTOFParamsForBetaMass{"enableTOFParamsForBetaMass", false, "Flag to use TOF parameters for TOF Beta and Mass"};
+  Configurable<bool> enableTOFParamsForBetaMass{"enableTOFParamsForBetaMass", true, "Flag to use TOF parameters for TOF Beta and Mass"};
 
   // Configuration flags to include and exclude particle hypotheses
   Configurable<LabeledArray<int>> enableParticle{"enableParticle",
@@ -692,8 +692,8 @@ struct tofPidMerge {
     }
 
     // Checking the TOF mass and TOF beta tables
-    enableTableBeta = isTableRequiredInWorkflow(initContext, "pidTOFbeta");
-    enableTableMass = isTableRequiredInWorkflow(initContext, "pidTOFmass");
+    enableTableBeta = true;
+    enableTableMass = true;
 
     if (!enableTableBeta && !enableTableMass) {
       LOG(info) << "No table for TOF mass and beta is required. Disabling beta and mass tables";
