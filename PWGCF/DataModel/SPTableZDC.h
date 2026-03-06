@@ -39,6 +39,14 @@ DECLARE_SOA_COLUMN(QxC, qxC, float);
 DECLARE_SOA_COLUMN(QyC, qyC, float);
 DECLARE_SOA_COLUMN(IsSelected, isSelected, bool);
 DECLARE_SOA_COLUMN(EventSelectionFlags, eventSelectionFlags, uint16_t);
+DECLARE_SOA_COLUMN(UncalibratedEnergyA1, uncalibratedEnergyA1, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyA2, uncalibratedEnergyA2, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyA3, uncalibratedEnergyA3, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyA4, uncalibratedEnergyA4, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyC1, uncalibratedEnergyC1, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyC2, uncalibratedEnergyC2, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyC3, uncalibratedEnergyC3, float);
+DECLARE_SOA_COLUMN(UncalibratedEnergyC4, uncalibratedEnergyC4, float);
 
 } // namespace sptablezdc
 
@@ -52,6 +60,14 @@ DECLARE_SOA_TABLE(SPTableZDC, "AOD", "SPZDC",
                   sptablezdc::QxC,
                   sptablezdc::QyC,
                   sptablezdc::IsSelected,
-                  sptablezdc::EventSelectionFlags);
+                  sptablezdc::EventSelectionFlags,
+                  sptablezdc::UncalibratedEnergyA1,
+                  sptablezdc::UncalibratedEnergyA2,
+                  sptablezdc::UncalibratedEnergyA3,
+                  sptablezdc::UncalibratedEnergyA4,
+                  sptablezdc::UncalibratedEnergyC1,
+                  sptablezdc::UncalibratedEnergyC2,
+                  sptablezdc::UncalibratedEnergyC3,
+                  sptablezdc::UncalibratedEnergyC4);
 } // namespace o2::aod
 #endif // PWGCF_DATAMODEL_SPTABLEZDC_H_

@@ -767,7 +767,7 @@ struct ZdcQVectors {
 
     if (!foundBC.has_zdc()) {
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -803,7 +803,7 @@ struct ZdcQVectors {
     if (!isZNAhit || !isZNChit) {
       counter++;
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0, eZN[0], eZN[1], eZN[2], eZN[3], eZN[4], eZN[5], eZN[6], eZN[7]);
       lastRunNumber = runnumber;
       return;
     }
@@ -815,7 +815,7 @@ struct ZdcQVectors {
     if (cent < EvSel.cfgCentMin || cent > EvSel.cfgCentMax || !collision.sel8() || std::abs(collision.posZ()) > cfgVtxZ) {
       // event not selected
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZN[4], eZN[5], eZN[6], eZN[7]);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -878,7 +878,7 @@ struct ZdcQVectors {
     if (!cal.calibfilesLoaded[0]) {
       counter++;
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZN[4], eZN[5], eZN[6], eZN[7]);
       lastRunNumber = runnumber;
       return;
     }
@@ -1031,7 +1031,7 @@ struct ZdcQVectors {
       if (isSelected && cfgFillHistRegistry)
         fillCommonRegistry<kBefore>(q[0], q[1], q[2], q[3], v, centrality, rsTimestamp);
 
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), q[0], q[1], q[2], q[3], isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), q[0], q[1], q[2], q[3], isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZN[4], eZN[5], eZN[6], eZN[7]);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -1184,7 +1184,7 @@ struct ZdcQVectors {
         registry.get<TProfile>(HIST("QA/after/ZNC_Qy"))->Fill(Form("%d", runnumber), qRec[3]);
       }
 
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), qXaShift, qYaShift, qXcShift, qYcShift, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), qXaShift, qYaShift, qXcShift, qYcShift, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZN[4], eZN[5], eZN[6], eZN[7]);
       qRec.clear();
 
       counter++;
