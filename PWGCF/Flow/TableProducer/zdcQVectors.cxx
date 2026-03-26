@@ -88,6 +88,8 @@ std::vector<double> qNoEq(4); // start values of [QxA, QyA, QxC, QyC]
 
 // for energy calibration
 std::vector<double> eZN(8);      // uncalibrated energy for the 2x4 towers (a1, a2, a3, a4, c1, c2, c3, c4)
+double eZNA{};                   // the same as eZN[8], but common energy
+double eZNC{};                   // the same as eZN[8], but common energy
 std::vector<double> meanEZN(10); // mean energies from calibration histos (common A, t1-4 A,common C, t1-4C)
 std::vector<double> e(8, 0.);    // calibrated energies (a1, a2, a3, a4, c1, c2, c3, c4))
 
@@ -191,6 +193,8 @@ struct ZdcQVectors {
     kRec,
     kTimestamp
   };
+
+  static constexpr float UndefValueFloat{-999.f};
 
   //  Define output
   HistogramRegistry registry{"Registry"};
@@ -767,7 +771,7 @@ struct ZdcQVectors {
 
     if (!foundBC.has_zdc()) {
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat, UndefValueFloat);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -783,6 +787,8 @@ struct ZdcQVectors {
     for (int tower = 0; tower < nTowers; tower++) {
       eZN[tower] = (tower < nTowersPerSide) ? zdcCol.energySectorZNA()[tower] : zdcCol.energySectorZNC()[tower % nTowersPerSide];
     }
+    eZNA = zdcCol.energyCommonZNA();
+    eZNC = zdcCol.energyCommonZNC();
 
     bool isZNAhit = true;
     bool isZNChit = true;
@@ -803,7 +809,7 @@ struct ZdcQVectors {
     if (!isZNAhit || !isZNChit) {
       counter++;
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, 0, eZN[0], eZN[1], eZN[2], eZN[3], eZNA, eZN[4], eZN[5], eZN[6], eZN[7], eZNC);
       lastRunNumber = runnumber;
       return;
     }
@@ -815,7 +821,7 @@ struct ZdcQVectors {
     if (cent < EvSel.cfgCentMin || cent > EvSel.cfgCentMax || !collision.sel8() || std::abs(collision.posZ()) > cfgVtxZ) {
       // event not selected
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZNA, eZN[4], eZN[5], eZN[6], eZN[7], eZNC);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -878,7 +884,7 @@ struct ZdcQVectors {
     if (!cal.calibfilesLoaded[0]) {
       counter++;
       isSelected = false;
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), 0, 0, 0, 0, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZNA, eZN[4], eZN[5], eZN[6], eZN[7], eZNC);
       lastRunNumber = runnumber;
       return;
     }
@@ -1031,7 +1037,7 @@ struct ZdcQVectors {
       if (isSelected && cfgFillHistRegistry)
         fillCommonRegistry<kBefore>(q[0], q[1], q[2], q[3], v, centrality, rsTimestamp);
 
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), q[0], q[1], q[2], q[3], isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), q[0], q[1], q[2], q[3], isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZNA, eZN[4], eZN[5], eZN[6], eZN[7], eZNC);
       counter++;
       lastRunNumber = runnumber;
       return;
@@ -1184,7 +1190,7 @@ struct ZdcQVectors {
         registry.get<TProfile>(HIST("QA/after/ZNC_Qy"))->Fill(Form("%d", runnumber), qRec[3]);
       }
 
-      spTableZDC(runnumber, cents, v, foundBC.timestamp(), qXaShift, qYaShift, qXcShift, qYcShift, isSelected, eventSelectionFlags);
+      spTableZDC(runnumber, cents, v, foundBC.timestamp(), qXaShift, qYaShift, qXcShift, qYcShift, isSelected, eventSelectionFlags, eZN[0], eZN[1], eZN[2], eZN[3], eZNA, eZN[4], eZN[5], eZN[6], eZN[7], eZNC);
       qRec.clear();
 
       counter++;
