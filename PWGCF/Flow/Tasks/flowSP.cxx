@@ -34,6 +34,7 @@
 #include "DataFormatsParameters/GRPMagField.h"
 #include "DataFormatsParameters/GRPObject.h"
 #include "Framework/ASoAHelpers.h"
+#include "Framework/AnalysisHelpers.h"
 #include "Framework/AnalysisTask.h"
 #include "Framework/HistogramRegistry.h"
 #include "Framework/O2DatabasePDGPlugin.h"
@@ -57,9 +58,28 @@ using namespace o2::framework::expressions;
 using namespace o2::aod::rctsel;
 // using namespace o2::analysis;
 
+namespace o2::aod
+{
+namespace flowsp
+{
+DECLARE_SOA_COLUMN(Centrality, centrality, float);
+DECLARE_SOA_COLUMN(PsiA, psiA, float);
+DECLARE_SOA_COLUMN(PsiC, psiC, float);
+DECLARE_SOA_COLUMN(NumberOfTracks, numberOfTracks, int);
+} // namespace flowsp
+
+DECLARE_SOA_TABLE(FlowSPEvents, "AOD", "FLOWSP",
+                  flowsp::Centrality,
+                  flowsp::PsiA,
+                  flowsp::PsiC,
+                  flowsp::NumberOfTracks);
+} // namespace o2::aod
+
 #define O2_DEFINE_CONFIGURABLE(NAME, TYPE, DEFAULT, HELP) Configurable<TYPE> NAME{#NAME, DEFAULT, HELP};
 
 struct FlowSP {
+  Produces<o2::aod::FlowSPEvents> rowFlowSPEvents;
+
   RCTFlagsChecker rctChecker;
 
   struct : ConfigurableGroup {
@@ -1564,6 +1584,8 @@ struct FlowSP {
         }
       }
     }
+
+    rowFlowSPEvents(spm.centrality, spm.psiA, spm.psiC, tracks.size());
 
     delete meanPTMap;
     delete meanPTMapPos;
