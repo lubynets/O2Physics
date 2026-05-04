@@ -63,21 +63,43 @@ namespace o2::aod
 namespace flowsp
 {
 DECLARE_SOA_COLUMN(Centrality, centrality, float);
-DECLARE_SOA_COLUMN(PsiA, psiA, float);
-DECLARE_SOA_COLUMN(PsiC, psiC, float);
 DECLARE_SOA_COLUMN(NumberOfTracks, numberOfTracks, int);
+DECLARE_SOA_COLUMN(centFT0C, centFT0C, float); //Ilya
+DECLARE_SOA_COLUMN(centFT0M, centFT0M, float); //Ilya
+DECLARE_SOA_COLUMN(centFV0A, centFV0A, float); //Ilya
+DECLARE_SOA_COLUMN(multFT0A, multFT0A, int); //Ilya
+DECLARE_SOA_COLUMN(multFV0A, multFV0A, int); //Ilya
+DECLARE_SOA_COLUMN(centNGlobal, centNGlobal, float); //Ilya
+DECLARE_SOA_COLUMN(multNTracksPV, multNTracksPV, int); //Ilya
+DECLARE_SOA_COLUMN(bc_timestamp, bc_timestamp, int); //Ilya
+DECLARE_SOA_COLUMN(collision_sel8, collision_sel8, bool); //Ilya
+DECLARE_SOA_COLUMN(numContrib, numContrib, int); //Ilya
+DECLARE_SOA_COLUMN(trackOccupancyInTimeRange, trackOccupancyInTimeRange, float); //Ilya
+DECLARE_SOA_COLUMN(Qtracks, Qtracks, std::vector<int>); //Ilya
 } // namespace flowsp
 
 DECLARE_SOA_TABLE(FlowSPEvents, "AOD", "FLOWSP",
                   flowsp::Centrality,
-                  flowsp::PsiA,
-                  flowsp::PsiC,
-                  flowsp::NumberOfTracks);
+                  flowsp::NumberOfTracks,
+                  flowsp::centFT0C, //Ilya
+                  flowsp::centFT0M, //Ilya
+                  flowsp::centFV0A, //Ilya
+                  flowsp::multFT0A, //Ilya
+                  flowsp::multFV0A, //Ilya
+                  flowsp::centNGlobal, //Ilya
+                  flowsp::multNTracksPV, //Ilya
+                  flowsp::bc_timestamp, //Ilya
+                  flowsp::collision_sel8, //Ilya
+                  flowsp::numContrib, //Ilya
+                  flowsp::trackOccupancyInTimeRange, //Ilya
+                  flowsp::Qtracks, //Ilya
+                  );
 } // namespace o2::aod
 
 #define O2_DEFINE_CONFIGURABLE(NAME, TYPE, DEFAULT, HELP) Configurable<TYPE> NAME{#NAME, DEFAULT, HELP};
 
 struct FlowSP {
+
   Produces<o2::aod::FlowSPEvents> rowFlowSPEvents;
 
   RCTFlagsChecker rctChecker;
@@ -1220,6 +1242,16 @@ struct FlowSP {
   void processData(ZDCCollisions::iterator const& collision, aod::BCsWithTimestamps const&, UsedTracks const& tracks)
   {
 
+    const int nQcomponents = 2; // Ilya
+    const int nCharges = 2; // Ilya
+    const int nHarmonics=2; // Ilya
+    const int nEtaBins = 8; // Ilya
+    double etaBins[nEtaBins+1] = {-0.8,-0.6,-0.4,-0.2,0.0,0.2,0.4,0.6,0.8}; // Ilya
+    const int nPtBins = 13; // Ilya
+    double ptBins[nPtBins+1] = {0.0,0.2,0.3,0.4,0.6,0.8,1.0,1.2,1.4,1.6,2.0,4.0,8.0,10.0}; // Ilya
+    TH2D *etaPtBin_map = new TH2D("etaPtBin_map", "etaPtBin_map", nEtaBins, etaBins, nPtBins, ptBins); // Ilya
+    float sum_u[nHarmonics+1][nCharges][nQcomponents][nEtaBins][nPtBins] = { 0 }; // Ilya
+
     histos.fill(HIST("hEventCount"), evSel_FilteredEvent);
     auto bc = collision.bc_as<aod::BCsWithTimestamps>();
     int standardMagField = 99999;
@@ -1250,9 +1282,39 @@ struct FlowSP {
       spm.centrality = collision.centNGlobal();
 
     if (!eventSelected(collision, tracks.size()))
+      flowSPEvents( // Ilya
+        collision.centFT0C(), // Ilya
+        tracks.size(), // Ilya
+        collision.centFT0M(), // Ilya
+        collision.centFV0A(), // Ilya
+        collision.multFT0A(), // Ilya
+        collision.multFV0A(), // Ilya
+        collision.centNGlobal(), // Ilya
+        collision.multNTracksPV(), // Ilya
+        bc.timestamp(), // Ilya
+        collision.sel8(), // Ilya
+        collision.numContrib(), // Ilya
+        collision.trackOccupancyInTimeRange(), // Ilya
+        Q_tracks // Ilya
+      ); // Ilya
       return;
 
     if (!collision.isSelected()) // selected by ZDCQVectors task (checks signal in ZDC) --> only possible in data not MC
+      flowSPEvents( // Ilya
+        collision.centFT0C(), // Ilya
+        tracks.size(), // Ilya
+        collision.centFT0M(), // Ilya
+        collision.centFV0A(), // Ilya
+        collision.multFT0A(), // Ilya
+        collision.multFV0A(), // Ilya
+        collision.centNGlobal(), // Ilya
+        collision.multNTracksPV(), // Ilya
+        bc.timestamp(), // Ilya
+        collision.sel8(), // Ilya
+        collision.numContrib(), // Ilya
+        collision.trackOccupancyInTimeRange(), // Ilya
+        Q_tracks // Ilya
+      ); // Ilya
       return;
     histos.fill(HIST("hEventCount"), evSel_isSelectedZDC);
 
@@ -1296,6 +1358,21 @@ struct FlowSP {
     }
 
     if (spm.centrality > cfgCentMax || spm.centrality < cfgCentMin)
+      flowSPEvents( // Ilya
+        collision.centFT0C(), // Ilya
+        tracks.size(), // Ilya
+        collision.centFT0M(), // Ilya
+        collision.centFV0A(), // Ilya
+        collision.multFT0A(), // Ilya
+        collision.multFV0A(), // Ilya
+        collision.centNGlobal(), // Ilya
+        collision.multNTracksPV(), // Ilya
+        bc.timestamp(), // Ilya
+        collision.sel8(), // Ilya
+        collision.numContrib(), // Ilya
+        collision.trackOccupancyInTimeRange(), // Ilya
+        Q_tracks // Ilya
+      ); // Ilya
       return;
 
     histos.fill(HIST("hEventCount"), evSel_CentCuts);
@@ -1455,6 +1532,13 @@ struct FlowSP {
         }
       }
 
+      for (int iH=0; iH < nHarmonics; iH++) //Ilya
+      { //Ilya
+        int uEtaBin = etaPtBin_map->GetXaxis()->FindBin(track.eta()); //Ilya
+        int uPtBin = etaPtBin_map->GetYaxis()->FindBin(track.pt()); //Ilya
+        sum_u_array[iH][spm.charge][0][uEtaBin][uPtBin]+=cos(iH*phi); //Ilya
+        sum_u_array[iH][spm.charge][1][uEtaBin][uPtBin]+=sin(iH*phi); //Ilya
+      } //Ilya
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       spm.ux = std::cos(cfgHarm * phi);
       spm.uy = std::sin(cfgHarm * phi);
@@ -1555,6 +1639,17 @@ struct FlowSP {
 
     } // end of track loop
 
+    std::vector<int> Q_tracks;
+    for (int iH=0; iH < nHarmonics+1; iH++){ //Ilya
+      for (int iCh=0; iCh < nCharges; iCh++){ //Ilya
+        for (int iQc=0; iQc < nQcomponents; iQc++){ //Ilya
+          for (int iEta=0; iEta < nEtaBins; iEta++){ //Ilya
+            for (int iPt=0; iPt < nPtBins; iPt++){ //Ilya
+              int value=int(sum_u[iH][iCh][iQc][iEta][iPt]); //Ilya
+              if (iH!=0)value =value*10000; //Ilya
+                Q_tracks.push_back(); //Ilya
+    }}}}} //Ilya
+
     // Now we want to fill the final relPt histogram
     // Loop over all eta and fill bins
     if (cfgFillMeanPT) {
@@ -1585,7 +1680,21 @@ struct FlowSP {
       }
     }
 
-    rowFlowSPEvents(spm.centrality, spm.psiA, spm.psiC, tracks.size());
+    flowSPEvents( // Ilya
+      collision.centFT0C(), // Ilya
+      tracks.size(), // Ilya
+      collision.centFT0M(), // Ilya
+      collision.centFV0A(), // Ilya
+      collision.multFT0A(), // Ilya
+      collision.multFV0A(), // Ilya
+      collision.centNGlobal(), // Ilya
+      collision.multNTracksPV(), // Ilya
+      bc.timestamp(), // Ilya
+      collision.sel8(), // Ilya
+      collision.numContrib(), // Ilya
+      collision.trackOccupancyInTimeRange(), // Ilya
+      Q_tracks // Ilya
+    ); // Ilya
 
     delete meanPTMap;
     delete meanPTMapPos;
