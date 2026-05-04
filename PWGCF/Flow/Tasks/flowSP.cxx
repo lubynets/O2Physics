@@ -353,8 +353,21 @@ struct FlowSP {
   static constexpr std::string_view Species[] = {"", "pion/", "kaon/", "proton/"};
   static constexpr std::string_view Time[] = {"before/", "after/"};
 
+  static constexpr int nQcomponents = 2; // Ilya
+  static constexpr int nCharges = 2; // Ilya
+  static constexpr int nHarmonics=2; // Ilya
+  static constexpr int nEtaBins = 8; // Ilya
+  static constexpr double etaBins[nEtaBins+1] = {-0.8,-0.6,-0.4,-0.2,0.0,0.2,0.4,0.6,0.8}; // Ilya
+  static constexpr int nPtBins = 13; // Ilya
+  static constexpr double ptBins[nPtBins+1] = {0.0,0.2,0.3,0.4,0.6,0.8,1.0,1.2,1.4,1.6,2.0,4.0,8.0,10.0}; // Ilya
+  TH2D *etaPtBin_map{nullptr}; // Ilya
+  // make histogram a member of struct
+
   void init(InitContext const&)
   {
+
+    etaPtBin_map = new TH2D("etaPtBin_map", "etaPtBin_map", nEtaBins, etaBins, nPtBins, ptBins); // Ilya
+    //initialize histogram only once, in init() and not in each collision, in processData()
 
     ccdb->setURL("http://alice-ccdb.cern.ch");
     ccdb->setCaching(true);
@@ -1241,15 +1254,6 @@ struct FlowSP {
 
   void processData(ZDCCollisions::iterator const& collision, aod::BCsWithTimestamps const&, UsedTracks const& tracks)
   {
-
-    const int nQcomponents = 2; // Ilya
-    const int nCharges = 2; // Ilya
-    const int nHarmonics=2; // Ilya
-    const int nEtaBins = 8; // Ilya
-    double etaBins[nEtaBins+1] = {-0.8,-0.6,-0.4,-0.2,0.0,0.2,0.4,0.6,0.8}; // Ilya
-    const int nPtBins = 13; // Ilya
-    double ptBins[nPtBins+1] = {0.0,0.2,0.3,0.4,0.6,0.8,1.0,1.2,1.4,1.6,2.0,4.0,8.0,10.0}; // Ilya
-    TH2D *etaPtBin_map = new TH2D("etaPtBin_map", "etaPtBin_map", nEtaBins, etaBins, nPtBins, ptBins); // Ilya
     float sum_u[nHarmonics+1][nCharges][nQcomponents][nEtaBins][nPtBins] = { 0 }; // Ilya
 
     histos.fill(HIST("hEventCount"), evSel_FilteredEvent);
