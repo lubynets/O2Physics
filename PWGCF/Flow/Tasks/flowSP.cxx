@@ -62,37 +62,37 @@ namespace o2::aod
 {
 namespace flowsp
 {
-DECLARE_SOA_COLUMN(Centrality, centrality, float);
+// (1) The first argument is column's name and the second is a getter. They must be different
+// (2) Removed Centrality, since it was filled with centFT0C which has a dedicated column
 DECLARE_SOA_COLUMN(NumberOfTracks, numberOfTracks, int);
-DECLARE_SOA_COLUMN(centFT0C, centFT0C, float); //Ilya
-DECLARE_SOA_COLUMN(centFT0M, centFT0M, float); //Ilya
-DECLARE_SOA_COLUMN(centFV0A, centFV0A, float); //Ilya
-DECLARE_SOA_COLUMN(multFT0A, multFT0A, int); //Ilya
-DECLARE_SOA_COLUMN(multFV0A, multFV0A, int); //Ilya
-DECLARE_SOA_COLUMN(centNGlobal, centNGlobal, float); //Ilya
-DECLARE_SOA_COLUMN(multNTracksPV, multNTracksPV, int); //Ilya
-DECLARE_SOA_COLUMN(bc_timestamp, bc_timestamp, int); //Ilya
-DECLARE_SOA_COLUMN(collision_sel8, collision_sel8, bool); //Ilya
-DECLARE_SOA_COLUMN(numContrib, numContrib, int); //Ilya
-DECLARE_SOA_COLUMN(trackOccupancyInTimeRange, trackOccupancyInTimeRange, float); //Ilya
-DECLARE_SOA_COLUMN(Qtracks, Qtracks, std::vector<int>); //Ilya
+DECLARE_SOA_COLUMN(CentFT0C, centFT0C, float); //Ilya
+DECLARE_SOA_COLUMN(CentFT0M, centFT0M, float); //Ilya
+DECLARE_SOA_COLUMN(CentFV0A, centFV0A, float); //Ilya
+DECLARE_SOA_COLUMN(MultFT0A, multFT0A, int); //Ilya
+DECLARE_SOA_COLUMN(MultFV0A, multFV0A, int); //Ilya
+DECLARE_SOA_COLUMN(CentNGlobal, centNGlobal, float); //Ilya
+DECLARE_SOA_COLUMN(MultNTracksPV, multNTracksPV, int); //Ilya
+DECLARE_SOA_COLUMN(Bc_timestamp, bc_timestamp, int); //Ilya
+DECLARE_SOA_COLUMN(Collision_sel8, collision_sel8, bool); //Ilya
+DECLARE_SOA_COLUMN(NumContrib, numContrib, int); //Ilya
+DECLARE_SOA_COLUMN(TrackOccupancyInTimeRange, trackOccupancyInTimeRange, float); //Ilya
+DECLARE_SOA_COLUMN(Qtracks, qtracks, std::vector<int>); //Ilya
 } // namespace flowsp
 
 DECLARE_SOA_TABLE(FlowSPEvents, "AOD", "FLOWSP",
-                  flowsp::Centrality,
                   flowsp::NumberOfTracks,
-                  flowsp::centFT0C, //Ilya
-                  flowsp::centFT0M, //Ilya
-                  flowsp::centFV0A, //Ilya
-                  flowsp::multFT0A, //Ilya
-                  flowsp::multFV0A, //Ilya
-                  flowsp::centNGlobal, //Ilya
-                  flowsp::multNTracksPV, //Ilya
-                  flowsp::bc_timestamp, //Ilya
-                  flowsp::collision_sel8, //Ilya
-                  flowsp::numContrib, //Ilya
-                  flowsp::trackOccupancyInTimeRange, //Ilya
-                  flowsp::Qtracks, //Ilya
+                  flowsp::CentFT0C, //Ilya
+                  flowsp::CentFT0M, //Ilya
+                  flowsp::CentFV0A, //Ilya
+                  flowsp::MultFT0A, //Ilya
+                  flowsp::MultFV0A, //Ilya
+                  flowsp::CentNGlobal, //Ilya
+                  flowsp::MultNTracksPV, //Ilya
+                  flowsp::Bc_timestamp, //Ilya
+                  flowsp::Collision_sel8, //Ilya
+                  flowsp::NumContrib, //Ilya
+                  flowsp::TrackOccupancyInTimeRange, //Ilya
+                  flowsp::Qtracks //Ilya
                   );
 } // namespace o2::aod
 
@@ -1281,10 +1281,11 @@ struct FlowSP {
     if (cfgCentNGlobal)
       spm.centrality = collision.centNGlobal();
 
-    if (!eventSelected(collision, tracks.size()))
-      flowSPEvents( // Ilya
-        collision.centFT0C(), // Ilya
+    // need {} since after if there is more than one line. In few more places the same
+    if (!eventSelected(collision, tracks.size())) {
+      rowFlowSPEvents( // Ilya
         tracks.size(), // Ilya
+        collision.centFT0C(),
         collision.centFT0M(), // Ilya
         collision.centFV0A(), // Ilya
         collision.multFT0A(), // Ilya
@@ -1295,14 +1296,16 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        Q_tracks // Ilya
+        std::vector<int>{} // Ilya
+        // Q_tracks was not decalred yet. Replaced with an empty vector. In three more places the same
       ); // Ilya
       return;
+    }
 
-    if (!collision.isSelected()) // selected by ZDCQVectors task (checks signal in ZDC) --> only possible in data not MC
-      flowSPEvents( // Ilya
-        collision.centFT0C(), // Ilya
+    if (!collision.isSelected()) { // selected by ZDCQVectors task (checks signal in ZDC) --> only possible in data not MC
+      rowFlowSPEvents( // Ilya
         tracks.size(), // Ilya
+        collision.centFT0C(),
         collision.centFT0M(), // Ilya
         collision.centFV0A(), // Ilya
         collision.multFT0A(), // Ilya
@@ -1313,9 +1316,10 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        Q_tracks // Ilya
+        std::vector<int>{} // Ilya
       ); // Ilya
       return;
+    }
     histos.fill(HIST("hEventCount"), evSel_isSelectedZDC);
 
     // Always fill centrality histogram after event selections!
@@ -1357,10 +1361,10 @@ struct FlowSP {
       histos.fill(HIST("QA/hFullEvPlaneRes"), spm.centrality, -1 * std::cos(spm.psiA - spm.psiC));
     }
 
-    if (spm.centrality > cfgCentMax || spm.centrality < cfgCentMin)
-      flowSPEvents( // Ilya
-        collision.centFT0C(), // Ilya
+    if (spm.centrality > cfgCentMax || spm.centrality < cfgCentMin) {
+      rowFlowSPEvents( // Ilya
         tracks.size(), // Ilya
+        collision.centFT0C(),
         collision.centFT0M(), // Ilya
         collision.centFV0A(), // Ilya
         collision.multFT0A(), // Ilya
@@ -1371,9 +1375,10 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        Q_tracks // Ilya
+        std::vector<int>{} // Ilya
       ); // Ilya
       return;
+    }
 
     histos.fill(HIST("hEventCount"), evSel_CentCuts);
 
@@ -1536,8 +1541,9 @@ struct FlowSP {
       { //Ilya
         int uEtaBin = etaPtBin_map->GetXaxis()->FindBin(track.eta()); //Ilya
         int uPtBin = etaPtBin_map->GetYaxis()->FindBin(track.pt()); //Ilya
-        sum_u_array[iH][spm.charge][0][uEtaBin][uPtBin]+=cos(iH*phi); //Ilya
-        sum_u_array[iH][spm.charge][1][uEtaBin][uPtBin]+=sin(iH*phi); //Ilya
+        sum_u[iH][spm.charge][0][uEtaBin][uPtBin]+=cos(iH*phi); //Ilya
+        sum_u[iH][spm.charge][1][uEtaBin][uPtBin]+=sin(iH*phi); //Ilya
+        // By context it should be sum_u.
       } //Ilya
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       spm.ux = std::cos(cfgHarm * phi);
@@ -1647,7 +1653,7 @@ struct FlowSP {
             for (int iPt=0; iPt < nPtBins; iPt++){ //Ilya
               int value=int(sum_u[iH][iCh][iQc][iEta][iPt]); //Ilya
               if (iH!=0)value =value*10000; //Ilya
-                Q_tracks.push_back(); //Ilya
+                Q_tracks.push_back(value); //Ilya
     }}}}} //Ilya
 
     // Now we want to fill the final relPt histogram
@@ -1680,9 +1686,9 @@ struct FlowSP {
       }
     }
 
-    flowSPEvents( // Ilya
-      collision.centFT0C(), // Ilya
+    rowFlowSPEvents( // Ilya
       tracks.size(), // Ilya
+      collision.centFT0C(),
       collision.centFT0M(), // Ilya
       collision.centFV0A(), // Ilya
       collision.multFT0A(), // Ilya
