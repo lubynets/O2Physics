@@ -1541,10 +1541,12 @@ struct FlowSP {
         }
       }
 
-      for (int iH=0; iH < nHarmonics; iH++) //Ilya
+      int uEtaBin = etaPtBin_map->GetXaxis()->FindBin(track.eta()); //Ilya
+      int uPtBin = etaPtBin_map->GetYaxis()->FindBin(track.pt()); //Ilya
+      sum_u[0][spm.charge][0][uEtaBin][uPtBin]+=1; //Ilya
+      sum_u[0][spm.charge][1][uEtaBin][uPtBin]+=track.pt(); //Ilya
+      for (int iH=1; iH < nHarmonics; iH++) //Ilya
       { //Ilya
-        int uEtaBin = etaPtBin_map->GetXaxis()->FindBin(track.eta()); //Ilya
-        int uPtBin = etaPtBin_map->GetYaxis()->FindBin(track.pt()); //Ilya
         sum_u[iH][spm.charge][0][uEtaBin][uPtBin]+=cos(iH*phi); //Ilya
         sum_u[iH][spm.charge][1][uEtaBin][uPtBin]+=sin(iH*phi); //Ilya
         // By context it should be sum_u.
@@ -1655,8 +1657,8 @@ struct FlowSP {
         for (int iQc=0; iQc < nQcomponents; iQc++){ //Ilya
           for (int iEta=0; iEta < nEtaBins; iEta++){ //Ilya
             for (int iPt=0; iPt < nPtBins; iPt++){ //Ilya
-              int value=int(sum_u[iH][iCh][iQc][iEta][iPt]); //Ilya
-              if (iH!=0)value =value*10000; //Ilya
+              int value=int(10000*sum_u[iH][iCh][iQc][iEta][iPt]); //Ilya
+              if (iH==0 && iQc==0) value = sum_u[iH][iCh][iQc][iEta][iPt]; //Ilya
                 Q_tracks.push_back(value); //Ilya
     }}}}} //Ilya
 
