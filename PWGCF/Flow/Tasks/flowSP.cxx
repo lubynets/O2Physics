@@ -76,7 +76,7 @@ DECLARE_SOA_COLUMN(Bc_timestamp, bc_timestamp, int); //Ilya
 DECLARE_SOA_COLUMN(Collision_sel8, collision_sel8, bool); //Ilya
 DECLARE_SOA_COLUMN(NumContrib, numContrib, int); //Ilya
 DECLARE_SOA_COLUMN(TrackOccupancyInTimeRange, trackOccupancyInTimeRange, float); //Ilya
-DECLARE_SOA_COLUMN(Qtracks, qtracks, std::vector<int>); //Ilya
+DECLARE_SOA_COLUMN(Qtracks, qtracks, std::vector<float>); //Ilya
 } // namespace flowsp
 
 DECLARE_SOA_TABLE(FlowSPEvents, "AOD", "FLOWSP",
@@ -1300,7 +1300,7 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        std::vector<int>{} // Ilya
+        std::vector<float>{} // Ilya
         // Q_tracks was not decalred yet. Replaced with an empty vector. In three more places the same
       ); // Ilya
       return;
@@ -1320,7 +1320,7 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        std::vector<int>{} // Ilya
+        std::vector<float>{} // Ilya
       ); // Ilya
       return;
     }
@@ -1379,7 +1379,7 @@ struct FlowSP {
         collision.sel8(), // Ilya
         collision.numContrib(), // Ilya
         collision.trackOccupancyInTimeRange(), // Ilya
-        std::vector<int>{} // Ilya
+        std::vector<float>{} // Ilya
       ); // Ilya
       return;
     }
@@ -1545,7 +1545,7 @@ struct FlowSP {
       int uPtBin = etaPtBin_map->GetYaxis()->FindBin(track.pt()); //Ilya
       sum_u[0][spm.charge][0][uEtaBin][uPtBin]+=1; //Ilya
       sum_u[0][spm.charge][1][uEtaBin][uPtBin]+=track.pt(); //Ilya
-      for (int iH=1; iH < nHarmonics; iH++) //Ilya
+      for (int iH=1; iH <= nHarmonics; iH++) //Ilya
       { //Ilya
         sum_u[iH][spm.charge][0][uEtaBin][uPtBin]+=cos(iH*phi); //Ilya
         sum_u[iH][spm.charge][1][uEtaBin][uPtBin]+=sin(iH*phi); //Ilya
@@ -1651,15 +1651,14 @@ struct FlowSP {
 
     } // end of track loop
 
-    std::vector<int> Q_tracks;
+    std::vector<float> Q_tracks;
     for (int iH=0; iH < nHarmonics+1; iH++){ //Ilya
       for (int iCh=0; iCh < nCharges; iCh++){ //Ilya
         for (int iQc=0; iQc < nQcomponents; iQc++){ //Ilya
           for (int iEta=0; iEta < nEtaBins; iEta++){ //Ilya
             for (int iPt=0; iPt < nPtBins; iPt++){ //Ilya
-              int value=int(10000*sum_u[iH][iCh][iQc][iEta][iPt]); //Ilya
-              if (iH==0 && iQc==0) value = sum_u[iH][iCh][iQc][iEta][iPt]; //Ilya
-                Q_tracks.push_back(value); //Ilya
+              const float value = sum_u[iH][iCh][iQc][iEta][iPt]; //Ilya
+              Q_tracks.push_back(value); //Ilya
     }}}}} //Ilya
 
     // Now we want to fill the final relPt histogram
