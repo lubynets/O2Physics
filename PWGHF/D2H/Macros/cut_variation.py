@@ -580,7 +580,8 @@ class CutVarMinimiser:
         hist_raw_yield_sum.Draw("histsame")
         tex = ROOT.TLatex()
         tex.SetTextSize(0.04)
-        tex.DrawLatexNDC(0.05, 0.95, title)
+        tex.SetTextAlign(31)
+        tex.DrawLatexNDC(0.95, 0.95, title)
         canvas.Modified()
         canvas.Update()
 
@@ -651,7 +652,8 @@ class CutVarMinimiser:
         hist_corr_matrix.Draw("colz")
         tex = ROOT.TLatex()
         tex.SetTextSize(0.04)
-        tex.DrawLatexNDC(0.05, 0.95, title)
+        tex.SetTextAlign(31)
+        tex.DrawLatexNDC(0.95, 0.95, title)
         canvas.Modified()
         canvas.Update()
 
@@ -743,7 +745,8 @@ class CutVarMinimiser:
         leg.Draw()
         tex = ROOT.TLatex()
         tex.SetTextSize(0.04)
-        tex.DrawLatexNDC(0.05, 0.95, title)
+        tex.SetTextAlign(31)
+        tex.DrawLatexNDC(0.95, 0.95, title)
         canvas.Modified()
         canvas.Update()
 
@@ -828,7 +831,8 @@ class CutVarMinimiser:
         leg.Draw()
         tex = ROOT.TLatex()
         tex.SetTextSize(0.04)
-        tex.DrawLatexNDC(0.05, 0.95, title)
+        tex.SetTextAlign(31)
+        tex.DrawLatexNDC(0.95, 0.95, title)
         canvas.Modified()
         canvas.Update()
 
@@ -905,7 +909,8 @@ class CutVarMinimiser:
         hist_residual_unc.Draw("histsame")
         tex = ROOT.TLatex()
         tex.SetTextSize(0.04)
-        tex.DrawLatexNDC(0.05, 0.95, title)
+        tex.SetTextAlign(31)
+        tex.DrawLatexNDC(0.95, 0.95, title)
         canvas.Modified()
         canvas.Update()
 
