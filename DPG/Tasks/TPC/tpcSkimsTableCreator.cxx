@@ -442,6 +442,7 @@ struct TreeWriterTpcV0 {
         bcTimeFrameId = UndefValueInt;
         bcBcInTimeFrame = UndefValueInt;
         rowTPCTree.reserve(2 * v0s.size() + cascs.size());
+        LOG(info) << "rowTPCTree.reserve(2 * v0s.size() + cascs.size()) = " << 2 * v0s.size() + cascs.size();
       } else if constexpr (ModeId == ModeWithTrkQA) {
         bcTimeFrameId = bc.tfId();
         bcBcInTimeFrame = bc.bcInTF();
@@ -462,6 +463,8 @@ struct TreeWriterTpcV0 {
         }
       };
 
+      int nCallsFillSkimmedV0Table{0};
+
       auto fillDaughterTrack = [&](const auto& mother, const TrksType::iterator& dauTrack, const auto& v0, const bool isPositive) {
         const auto [trackQAInstance, existTrkQA] = getTrackQA(dauTrack);
         const auto trackId = dauTrack.globalIndex();
@@ -481,6 +484,8 @@ struct TreeWriterTpcV0 {
             evaluateOccupancyVariables(dauTrack, occValues);
           }
           fillSkimmedV0Table<IsCorrectedDeDx, ModeId>(mother, dauTrack, trackQAInstance, existTrkQA, collision, daughter.tpcNSigma, daughter.tofNSigma, daughter.itsNSigma, daughter.tpcExpSignal, daughter.id, runnumber, daughter.dwnSmplFactor, hadronicRate, bcGlobalIndex, bcTimeFrameId, bcBcInTimeFrame, occValues, isGoodRctEvent);
+          ++nCallsFillSkimmedV0Table;
+          LOG(info) << "current nCallsFillSkimmedV0Table = " << nCallsFillSkimmedV0Table;
         }
       };
 
@@ -508,6 +513,7 @@ struct TreeWriterTpcV0 {
         const auto isDaughterPositive = cascId == MotherAntiOmega ? true : false;
         fillDaughterTrack(casc, bachTrack, casc, isDaughterPositive);
       }
+      LOG(info) << "nCallsFillSkimmedV0Table = " << nCallsFillSkimmedV0Table;
     }
   } /// runV0
 
@@ -813,6 +819,8 @@ struct TreeWriterTpcTof {
         continue;
       }
 
+      int nCallsfillSkimmedTpcTofTable{0};
+
       auto tracksWithITSPid = soa::Attach<TrksType,
                                           aod::pidits::ITSNSigmaPi, aod::pidits::ITSNSigmaKa, aod::pidits::ITSNSigmaPr,
                                           aod::pidits::ITSNSigmaDe, aod::pidits::ITSNSigmaTr>(tracks);
@@ -830,6 +838,7 @@ struct TreeWriterTpcTof {
         bcTimeFrameId = UndefValueInt;
         bcBcInTimeFrame = UndefValueInt;
         rowTPCTOFTree.reserve(tracks.size());
+        LOG(info) << "rowTPCTOFTree.reserve(tracks.size()) = " << tracks.size();
       } else {
         bcTimeFrameId = bc.tfId();
         bcBcInTimeFrame = bc.bcInTF();
@@ -871,9 +880,12 @@ struct TreeWriterTpcTof {
           const bool passDownsamplig = downsampleTsalisCharged(fRndm, trk.pt(), tofTrack->downsamplingTsalis, tofTrack->mass, sqrtSNN);
           if (passMomHardCut && (passMomTpcOnly || passMomTpcTof) && passDownsamplig) {
             fillSkimmedTpcTofTable<IsCorrectedDeDx, ModeId>(trk, trackQA, existTrkQA, collision, tofTrack->tpcNSigma, tofTrack->tofNSigma, tofTrack->itsNSigma, tofTrack->tpcExpSignal, tofTrack->pid, runnumber, tofTrack->dwnSmplFactor, hadronicRate, bcGlobalIndex, bcTimeFrameId, bcBcInTimeFrame, occValues, isGoodRctEvent);
+            ++nCallsfillSkimmedTpcTofTable;
+            LOG(info) << "current nCallsfillSkimmedTpcTofTable = " << nCallsfillSkimmedTpcTofTable;
           }
         }
       } /// Loop tracks
+      LOG(info) << "final nCallsfillSkimmedTpcTofTable = " << nCallsfillSkimmedTpcTofTable;
     }
   } /// runTof
 
