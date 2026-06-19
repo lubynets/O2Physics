@@ -218,7 +218,7 @@ void runMassFitter(const std::string& configFileName)
 
   std::vector<double> sliceVarLimits(nHistograms + 1);
 
-  auto checkVectorSize = [&](const auto& vec, const std::string& name = "", const bool isEmptyOk = false) {
+  auto checkVectorSize = [&](const auto& vec, const std::string& name, const bool isEmptyOk = false) {
     if (vec.size() != static_cast<size_t>(nHistograms)) {
       if (isEmptyOk && vec.empty()) {
         return;
