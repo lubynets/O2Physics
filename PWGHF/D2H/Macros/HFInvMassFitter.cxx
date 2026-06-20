@@ -241,17 +241,19 @@ void HFInvMassFitter::doFit()
     const ParameterRanges rooNBkgParamRanges{0., 1.2 * integralHisto, 0.3 * integralHisto};
     mRooNBkg = new RooRealVar("mRooNBkg", "number of background", randomizeInitialParameter(rooNBkgParamRanges), rooNBkgParamRanges.lower, rooNBkgParamRanges.upper); // background yield
     mBkgPdf = new RooAddPdf("mBkgPdf", "background fit function", RooArgList(*bkgPdf), RooArgList(*mRooNBkg));
+    std::string sbRanges{"SBL,SBR"};
     if (mTypeOfSgnPdf == GausSec) { // two peak fit
+      sbRanges.append(",SEC");
       if (strcmp(mFitOption.c_str(), "Chi2") == 0) {
-        mBkgPdf->chi2FitTo(dataHistogram, Range("SBL,SBR,SEC"), Save());
+        mBkgPdf->chi2FitTo(dataHistogram, Range(sbRanges.c_str()), Save());
       } else {
-        mBkgPdf->fitTo(dataHistogram, Range("SBL,SBR,SEC"), Save());
+        mBkgPdf->fitTo(dataHistogram, Range(sbRanges.c_str()), Save());
       }
     } else { // single peak fit
       if (strcmp(mFitOption.c_str(), "Chi2") == 0) {
-        mBkgPdf->chi2FitTo(dataHistogram, Range("SBL,SBR"), Save());
+        mBkgPdf->chi2FitTo(dataHistogram, Range(sbRanges.c_str()), Save());
       } else {
-        mBkgPdf->fitTo(dataHistogram, Range("SBL,SBR"), Save());
+        mBkgPdf->fitTo(dataHistogram, Range(sbRanges.c_str()), Save());
       }
     }
     // define the frame to evaluate background sidebands chi2 (bg pdf needs to be plotted within sideband ranges)
