@@ -179,6 +179,7 @@ class HFInvMassFitter : public TNamed
   void highlightPeakRegion(const RooPlot* plot, Color_t color = kGray + 1, Width_t width = 1, Style_t style = 2) const;
   [[nodiscard]] double randomizeInitialParameter(const ParameterRanges& parameterRanges) const;
   [[nodiscard]] std::pair<double, double> getRangesOfSignal() const;
+  [[nodiscard]] double integrateHistoInvMassOverWorkspaceRanges(const std::vector<std::string>& ranges) const;
 
   TH1* mHistoInvMass; // histogram to fit
   std::string mFitOption;
