@@ -542,7 +542,11 @@ void runMassFitter(const std::string& configFileName)
     setDscbParameter(dscbNRLower, &HFInvMassFitter::setDscbNRLowLimit);
     setDscbParameter(dscbNRUpper, &HFInvMassFitter::setDscbNRUpLimit);
 
-    massFitter->doFit();
+    try {
+      massFitter->doFit();
+    } catch (...) {
+      std::cout << "exception caught while doing fit\n";
+    }
 
     auto drawOnCanvas = [&](std::vector<TCanvas*>& canvas, std::function<void()> drawer) {
       if (nHistograms > 1) {

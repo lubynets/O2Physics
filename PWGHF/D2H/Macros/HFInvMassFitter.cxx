@@ -575,6 +575,7 @@ void HFInvMassFitter::fillWorkspace(RooWorkspace& workspace) const
 // draw fit output
 void HFInvMassFitter::drawFit(TVirtualPad* pad, const std::vector<std::string>& plotLabels, bool writeParInfo)
 {
+  std::cout << "drawFit() start\n";
   gStyle->SetOptStat(0);
   gStyle->SetCanvasColor(0);
   gStyle->SetFrameFillColor(0);
@@ -634,11 +635,17 @@ void HFInvMassFitter::drawFit(TVirtualPad* pad, const std::vector<std::string>& 
   if (mHistoTemplateRefl) {
     mReflFrame->Draw("same");
   }
+  std::cout << "drawFit() finish\n";
 }
 
 // draw residual distribution on canvas
 void HFInvMassFitter::drawResidual(TVirtualPad* pad)
 {
+  std::cout << "drawResidual() start\n";
+  if (mResidualFrame == nullptr) {
+    printf("Warning HFInvMassFitter::drawResidual(): mResidualFrame == nullptr and will not be drawn\n");
+    return;
+  }
   pad->cd();
   mResidualFrame->GetYaxis()->SetTitle("");
   auto* textInfo = new TPaveText(0.12, 0.65, 0.47, .89, "NDC");
@@ -655,11 +662,17 @@ void HFInvMassFitter::drawResidual(TVirtualPad* pad)
   mResidualFrame->addObject(textInfo);
   mResidualFrame->Draw();
   highlightPeakRegion(mResidualFrame);
+  std::cout << "drawResidual() finish\n";
 }
 
 // draw ratio on canvas
 void HFInvMassFitter::drawRatio(TVirtualPad* pad)
 {
+  std::cout << "drawRatio() start\n";
+  if (mRatioFrame == nullptr) {
+    printf("Warning HFInvMassFitter::drawRatio(): mRatioFrame == nullptr and will not be drawn\n");
+    return;
+  }
   pad->cd();
   mRatioFrame->GetXaxis()->SetTitleOffset(1.2);
   mRatioFrame->GetYaxis()->SetTitleOffset(1.5);
@@ -673,6 +686,7 @@ void HFInvMassFitter::drawRatio(TVirtualPad* pad)
   mRatioFrame->addObject(line);
   mRatioFrame->Draw();
   highlightPeakRegion(mRatioFrame);
+  std::cout << "drawRatio() finish\n";
 }
 
 // draw peak region with vertical lines
@@ -1162,13 +1176,17 @@ double HFInvMassFitter::randomizeInitialParameter(const ParameterRanges& paramet
 
 double HFInvMassFitter::integrateHistoInvMassOverWorkspaceRanges(const std::vector<std::string>& ranges) const
 {
+  std::cout << "integrateHistoInvMassOverWorkspaceRanges()\n";
   double sumEntries{0.};
   double sumLengths{0.};
   for (const auto& range : ranges) {
     const auto [lo, hi] = mWorkspace->var("mass")->getRange(range.c_str());
     sumEntries += mHistoInvMass->Integral(mHistoInvMass->FindBin(lo), mHistoInvMass->FindBin(hi));
     sumLengths += (hi - lo);
+    std::cout << "lo = " << lo << ", hi = " << hi << "\n";
+    std::cout << "sumEntries = " << sumEntries << "\n";
   }
+  mHistoInvMass->SaveAs("mHistoInvMass.root");
   const auto [fullLo, fullHi] = mWorkspace->var("mass")->getRange("full");
   const double fullLength = fullHi - fullLo;
 
