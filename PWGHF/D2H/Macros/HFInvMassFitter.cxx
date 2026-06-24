@@ -217,7 +217,6 @@ void HFInvMassFitter::doFit()
 
   TH1* histoInvMassSB = dynamic_cast<TH1*>(mHistoInvMass->Clone());
   cutRangesFromHisto(histoInvMassSB, {"SBL", "SBR"});
-  histoInvMassSB->SaveAs("histoInvMassSB.root");
   RooDataHist sbHistogram("sbHistogram", "sb", *mass, Import(*histoInvMassSB));
 
   RooAbsPdf* bkgPdf = createBackgroundFitFunction(mWorkspace); // Create background pdf
@@ -1187,7 +1186,6 @@ double HFInvMassFitter::integrateHistoInvMassOverWorkspaceRanges(const std::vect
     std::cout << "lo = " << lo << ", hi = " << hi << "\n";
     std::cout << "sumEntries = " << sumEntries << "\n";
   }
-  mHistoInvMass->SaveAs("mHistoInvMass.root");
   const auto [fullLo, fullHi] = mWorkspace->var("mass")->getRange("full");
   const double fullLength = fullHi - fullLo;
 
