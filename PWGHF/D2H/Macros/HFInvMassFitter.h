@@ -180,6 +180,7 @@ class HFInvMassFitter : public TNamed
   [[nodiscard]] double randomizeInitialParameter(const ParameterRanges& parameterRanges) const;
   [[nodiscard]] std::pair<double, double> getRangesOfSignal() const;
   [[nodiscard]] double integrateHistoInvMassOverWorkspaceRanges(const std::vector<std::string>& ranges) const;
+  void cutRangesFromHisto(TH1* histo, const std::vector<std::string>& ranges) const;
 
   TH1* mHistoInvMass; // histogram to fit
   std::string mFitOption;

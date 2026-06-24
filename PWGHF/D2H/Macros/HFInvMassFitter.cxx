@@ -50,6 +50,7 @@
 #include <Rtypes.h>
 #include <RtypesCore.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -199,13 +200,12 @@ void HFInvMassFitter::doFit()
   if (mTypeOfBkgPdf == NoBkg) { // MC
     mass->setRange("signal", mMass - 3. * mSigmaSgn, mMass + 3. * mSigmaSgn);
   } else {
+    mass->setRange("SBL", mMinMass, mMass - mNSigmaForSidebands * mSigmaSgn);
     if (mTypeOfSgnPdf == GausSec) { // Second Peak fit range
-      mass->setRange("SBL", mMinMass, mMass - mNSigmaForSidebands * mSigmaSgn);
       mass->setRange("SBR", mMass + mNSigmaForSidebands * mSigmaSgn, mSecMass - mNSigmaForSidebands * mSecSigma);
       mass->setRange("SEC", mSecMass + mNSigmaForSidebands * mSecSigma, mMaxMass);
       mass->setRange("signal", mSecMass - mNSigmaForSgn * mSecSigma, mSecMass + mNSigmaForSgn * mSecSigma);
     } else { // Single Peak fit range
-      mass->setRange("SBL", mMinMass, mMass - mNSigmaForSidebands * mSigmaSgn);
       mass->setRange("SBR", mMass + mNSigmaForSidebands * mSigmaSgn, mMaxMass);
       mass->setRange("signal", mMass - mNSigmaForSgn * mSigmaSgn, mMass + mNSigmaForSgn * mSigmaSgn);
     }
@@ -215,12 +215,17 @@ void HFInvMassFitter::doFit()
   mInvMassFrame = mass->frame(Title(Form("%s", mHistoInvMass->GetTitle()))); // define the frame to plot
   dataHistogram.plotOn(mInvMassFrame, Name("data_c"));                       // plot data histogram on the frame
 
+  TH1* histoInvMassSB = dynamic_cast<TH1*>(mHistoInvMass->Clone());
+  cutRangesFromHisto(histoInvMassSB, {"SBL", "SBR"});
+  histoInvMassSB->SaveAs("histoInvMassSB.root");
+  RooDataHist sbHistogram("sbHistogram", "sb", *mass, Import(*histoInvMassSB));
+
   RooAbsPdf* bkgPdf = createBackgroundFitFunction(mWorkspace); // Create background pdf
   RooAbsPdf* sgnPdf = createSignalFitFunction(mWorkspace);     // Create signal pdf
 
+  const double integralHisto = integrateHistoInvMassOverWorkspaceRanges({"full"});
   // fit MC or Data
   if (mTypeOfBkgPdf == NoBkg) { // MC
-    const double integralHisto = integrateHistoInvMassOverWorkspaceRanges({"full"});
     const ParameterRanges rooNSgnParamRanges{0.5 * integralHisto, 1.5 * integralHisto, integralHisto};
     mRooNSgn = new RooRealVar("mRooNSig", "number of signal", randomizeInitialParameter(rooNSgnParamRanges), rooNSgnParamRanges.lower, rooNSgnParamRanges.upper); // signal yield
     mTotalPdf = new RooAddPdf("mMCFunc", "MC fit function", RooArgList(*sgnPdf), RooArgList(*mRooNSgn));                                                          // create total pdf
@@ -248,13 +253,9 @@ void HFInvMassFitter::doFit()
     if (mTypeOfSgnPdf == GausSec) { // two peak fit
       sbRanges.append(",SEC");
     }
-    if (strcmp(mFitOption.c_str(), "Chi2") == 0) {
-      mBkgPdf->chi2FitTo(dataHistogram, Range(sbRanges.c_str()), Save());
-    } else {
-      mBkgPdf->fitTo(dataHistogram, Range(sbRanges.c_str()), Save());
-    }
-
+    mBkgPdf->chi2FitTo(sbHistogram, DataError(RooAbsData::SumW2), Save());
     std::cout << "mRooNBkg->getVal() = " << mRooNBkg->getVal() << "\n";
+
     // define the frame to evaluate background sidebands chi2 (bg pdf needs to be plotted within sideband ranges)
     RooPlot* frameTemporary = mass->frame(Title(Form("%s_temp", mHistoInvMass->GetTitle())));
     dataHistogram.plotOn(frameTemporary, Name("data_for_bkgchi2"));
@@ -263,7 +264,7 @@ void HFInvMassFitter::doFit()
     delete frameTemporary;
     if (mDrawBgPrefit) {
       RooAbsPdf* bkgPdfPrefit = dynamic_cast<RooAbsPdf*>(mBkgPdf->Clone());
-      bkgPdfPrefit->plotOn(mInvMassFrame, Range("full"), Name("Bkg_c_prefit"), LineColor(kGray));
+      bkgPdfPrefit->plotOn(mInvMassFrame, Range("full"), Normalization(mRooNBkg->getVal(), RooAbsReal::NumEvent), Name("Bkg_c_prefit"), LineColor(kGray));
       delete bkgPdfPrefit;
     }
 
@@ -275,7 +276,7 @@ void HFInvMassFitter::doFit()
     calculateBackground(mBkgYield, mBkgYieldErr); // BG's absolute integral in "bkg" range
 
     std::cout << "estimatedSignal = " << estimatedSignal << "\n";
-    const ParameterRanges rooNSgnParamRanges{0.5 * estimatedSignal, 1.5 * estimatedSignal, estimatedSignal};
+    const ParameterRanges rooNSgnParamRanges{0.1 * estimatedSignal, 20 * estimatedSignal, estimatedSignal};
     mRooNSgn = new RooRealVar("mNSgn", "number of signal", randomizeInitialParameter(rooNSgnParamRanges), rooNSgnParamRanges.lower, rooNSgnParamRanges.upper); // estimated signal yield
     if (mFixedRawYield > 0) {
       mRooNSgn->setVal(mFixedRawYield); // fixed signal yield
@@ -1191,4 +1192,29 @@ double HFInvMassFitter::integrateHistoInvMassOverWorkspaceRanges(const std::vect
   const double fullLength = fullHi - fullLo;
 
   return sumEntries / sumLengths * fullLength;
+}
+
+void HFInvMassFitter::cutRangesFromHisto(TH1* histo, const std::vector<std::string>& ranges) const
+{
+  auto* mass = mWorkspace->var("mass");
+
+  for (int iBin = 1, nBins = histo->GetNbinsX(); iBin <= nBins; ++iBin) {
+    const double binLow = histo->GetBinLowEdge(iBin);
+    const double binHigh = binLow + histo->GetBinWidth(iBin);
+
+    bool overlapsAnyRange = false;
+    for (const auto& range : ranges) {
+      const double rangeMin = mass->getMin(range.c_str());
+      const double rangeMax = mass->getMax(range.c_str());
+      if (std::max(binLow, rangeMin) <= std::min(binHigh, rangeMax)) {
+        overlapsAnyRange = true;
+        break;
+      }
+    }
+
+    if (!overlapsAnyRange) {
+      histo->SetBinContent(iBin, 0.);
+      histo->SetBinError(iBin, 1.e9);
+    }
+  }
 }
