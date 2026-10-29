@@ -42,7 +42,7 @@ o2physics_add_dpl_workflow(candidate-creator-2prong
                     PUBLIC_LINK_LIBRARIES O2Physics::AnalysisCore O2::DCAFitter KFParticle::KFParticle O2Physics::SGCutParHolder O2Physics::AnalysisCCDB O2Physics::EventFilteringUtils
                     COMPONENT_NAME Analysis)
 
-o2physics_add_dpl_workflow(candidate-creator-3prong
+o2physics_add_dpl_workflow(candidate-creator-3prong-dev-pikk
                     SOURCES candidateCreator3Prong.cxx
                     REUSE_FROM HfCandidatesPCH
                     PUBLIC_LINK_LIBRARIES O2Physics::AnalysisCore O2::DCAFitter KFParticle::KFParticle O2Physics::SGCutParHolder O2Physics::AnalysisCCDB O2Physics::EventFilteringUtils
