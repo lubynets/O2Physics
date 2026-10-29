@@ -73,6 +73,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -467,14 +468,24 @@ struct HfCandidateCreator3Prong {
   }
 
   template <bool DoPvRefit, bool ApplyUpcSel, o2::hf_centrality::CentralityEstimator CentEstimator, typename Coll, typename Cand, typename BCsType>
-  void runCreator3ProngWithKFParticle(Coll const&,
+  void runCreator3ProngWithKFParticle(Coll const& collisions,
                                       Cand const& rowsTrackIndexProng3,
                                       TracksWCovExtraPidPiKaPrLightNuclei const&,
                                       BCsType const& bcs)
   {
+    std::cout << "runCreator3ProngWithKFParticle() start\n";
+    std::cout << "rowsTrackIndexProng3.size() = " << rowsTrackIndexProng3.size() << "\n";
+    std::cout << "collisions.size() = " << collisions.size() << "\n";
+
+    int multiplicityBuffer{-999}; // to prevent multiple printing of the same abnormal collision
     for (const auto& rowTrackIndexProng3 : rowsTrackIndexProng3) {
       /// reject candidates in collisions not satisfying the event selections
       auto collision = rowTrackIndexProng3.template collision_as<Coll>();
+      const auto multiplicity = collision.multNTracksPV();
+      if(multiplicity > 300 && multiplicity != multiplicityBuffer) {
+        multiplicityBuffer = multiplicity;
+        std::cout << "collision.multNTracksPV() = " << multiplicity << "\n";
+      }
       float centrality{-1.f};
       o2::hf_evsel::HfCollisionRejectionMask rejectionMask{};
       if constexpr (ApplyUpcSel) {
@@ -707,6 +718,7 @@ struct HfCandidateCreator3Prong {
         registry.fill(HIST("hMass2PiK"), massPiK);
       }
     }
+    std::cout << "runCreator3ProngWithKFParticle() finish\n";
   }
 
   ///////////////////////////////////
@@ -1053,6 +1065,8 @@ struct HfCandidateCreator3ProngExpressions {
                           McCollisions const& mcCollisions,
                           BCsInfo const&)
   {
+    std::cout << "runCreator3ProngMc() start\n";
+
     rowCandidateProng3->bindExternalIndices(&tracks);
 
     int indexRec = -1;
@@ -1395,6 +1409,7 @@ struct HfCandidateCreator3ProngExpressions {
       }
       hf_mc_gen::fillMcMatchGen3Prong(mcParticles, mcParticlesPerMcColl, rowMcMatchGen, rejectBackground, matchCorrelatedBackground ? pdgMothersCorrelBkg : std::vector<int>{});
     }
+    std::cout << "runCreator3ProngMc() finish\n";
   }
 
   void processMc(aod::TracksWMc const& tracks,
