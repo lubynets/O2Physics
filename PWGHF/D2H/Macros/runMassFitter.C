@@ -304,7 +304,8 @@ void runMassFitter(const std::string& configFileName)
     {"LcToPKPi", {"pK#pi", "Lambda_c+", "#Lambda_{c}^{+}", "pK^{-}#pi^{+}"}},
     {"LcToPK0s", {"pK^{0}_{s}", "Lambda_c+", "#Lambda_{c}^{+}", "pK^{0}_{s}"}},
     {"Dstar", {"D^{0}pi^{+}", "D*+", "D^{*+}", "D^{0}#pi^{+}"}},
-    {"XicToXiPiPi", {"#Xi#pi#pi", "Xi_c+", "#Xi_{c}^{+}", "#Xi^{-}#pi^{+}#pi^{+}"}}};
+    {"XicToXiPiPi", {"#Xi#pi#pi", "Xi_c+", "#Xi_{c}^{+}", "#Xi^{-}#pi^{+}#pi^{+}"}},
+    {"Xic0ToXiPi", {"#Xi#pi", "Xi_c0", "#Xi_{c}^{0}", "#Xi^{-}#pi^{+}"}}};
   // NOLINTEND(modernize-use-designated-initializers): c++17 compatibility
   if (particles.find(particleName) == particles.end()) { // NOLINT(readability-container-contains): c++17 compatibility
     throw std::runtime_error("ERROR: only Dplus, D0, Ds, LcToPKPi, LcToPK0s, Dstar and XicToXiPiPi particles supported! Exit");

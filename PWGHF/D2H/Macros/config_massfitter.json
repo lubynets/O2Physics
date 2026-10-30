@@ -35,7 +35,8 @@
         "LcToPKPi",
         "LcToPK0s",
         "Dstar",
-        "XicToXiPiPi"
+        "XicToXiPiPi",
+        "Xic0ToXiPi"
     ],
     "CollisionSystem": "pp #sqrt{#it{s}} = 13.6 TeV",
     "_CollisionSystems": "Label for mass canvases",
