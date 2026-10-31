@@ -800,7 +800,9 @@ std::pair<double, double> HFInvMassFitter::getRangesOfSignal() const
   }
   const double mean = mRooMeanSgn->getVal();
   const double sigma = mRooSecSigmaSgn->getVal();
-  return std::make_pair(mean - mNSigmaForSgn * sigma, mean + mNSigmaForSgn * sigma);
+  const double leftRange = std::max(mean - mNSigmaForSgn * sigma, mMinMass);
+  const double rightRange = std::min(mean + mNSigmaForSgn * sigma, mMaxMass);
+  return std::make_pair(leftRange, rightRange);
 }
 
 // Create Background Fit Function
