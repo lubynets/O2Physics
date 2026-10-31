@@ -405,7 +405,7 @@ void HFInvMassFitter::fillWorkspace(RooWorkspace& workspace) const
   delete bkgFuncPowExpo;
 
   // signal pdf
-  RooRealVar mean("mean", "mean for signal fit", mMass, 0, 5);
+  RooRealVar mean("mean", "mean for signal fit", mMass, mMinMass, mMaxMass);
   if (mBoundMean) {
     mean.setMax(mMassUpLimit);
     mean.setMin(mMassLowLimit);
