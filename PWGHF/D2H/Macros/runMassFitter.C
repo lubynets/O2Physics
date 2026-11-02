@@ -520,7 +520,6 @@ void runMassFitter(const std::string& configFileName)
     massFitter->setHighlightPeakRegion(highlightPeakRegion);
     massFitter->setInitialGaussianMean(massPDG);
     massFitter->setParticlePdgMass(massPDG);
-    massFitter->setBoundGaussianMean(massPDG, 0.8 * massPDG, 1.2 * massPDG);
     if (useLikelihood) {
       massFitter->setUseLikelihoodFit();
     } else {
