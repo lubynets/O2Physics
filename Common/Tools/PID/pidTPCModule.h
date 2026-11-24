@@ -462,6 +462,7 @@ class pidTPCModule
     constexpr double HadronicRateNormAa = 50.;
     constexpr double Ft0cOccupancyNorm = 60000.;
     constexpr float LightSpeedDm2PS = o2::constants::physics::LightSpeedCm2PS / 10.f;
+    constexpr float UndefValueFloat = -999.f;
 
     struct NNVersionEntry {
       std::string_view versionName{};
@@ -594,41 +595,47 @@ class pidTPCModule
     // Filling a std::vector<float> to be evaluated by the network
     // Evaluation on single tracks brings huge overhead: Thus evaluation is done on one large vector
     for (int jParticleType = 0; jParticleType < NParticleTypes; ++jParticleType) { // Loop over particle number for which network correction is used
-      for (auto const& trk : tracks) {
-        if (!trk.hasTPC()) {
-          continue;
-        }
-        if (pidTPCopts.skipTPCOnly) {
-          if (!trk.hasITS() && !trk.hasTRD() && !trk.hasTOF()) {
+      if (speciesNetworkFlags[jParticleType] != 0) {
+        for (auto const& trk : tracks) {
+          if (!trk.hasTPC()) {
             continue;
           }
-        }
-        const bool isGoodTrack = trk.has_collision() && mults.size() > 0;
-        trackProperties[counterTrackProps + IdxTpcInnerParam] = trk.tpcInnerParam();
-        trackProperties[counterTrackProps + IdxTgl] = trk.tgl();
-        trackProperties[counterTrackProps + IdxSigned1Pt] = trk.signed1Pt();
-        trackProperties[counterTrackProps + IdxMass] = o2::track::pid_constants::sMasses[jParticleType];
-        trackProperties[counterTrackProps + IdxMultiplicity] = isGoodTrack ? mults[trk.collisionId()] / MultiplicityNorm : 1.;
-        trackProperties[counterTrackProps + IdxNClusters] = std::sqrt(nNclNormalization / trk.tpcNClsFound());
-        if (nnVersion >= OldestNNVersionWithFt0c) {
-          trackProperties[counterTrackProps + IdxFt0cOcc] = isGoodTrack ? collisions.iteratorAt(trk.collisionId()).ft0cOccupancyInTimeRange() / Ft0cOccupancyNorm : 1.;
-        }
-        if (nnVersion >= OldestNNVersionWithHadronicRate) {
-          const float hadronicRate = isGoodTrack ? hadronicRateForCollision[trk.collisionId()] : hadronicRateBegin;
-          trackProperties[counterTrackProps + IdxHadronicRate] = hadronicRate / hadronicRateNorm;
-        }
-        if (nnVersion >= OldestNNVersionWithModPhi) {
-          float phi = trk.phi();
-          if (nnVersion == NNVersionWithModPhiEntrance) {
-            phi += pidTPCopts.phiEntranceCoeff1 * LightSpeedDm2PS * 0.5 * pidTPCopts.phiEntranceCoeff2 * trk.signed1Pt();
+          if (pidTPCopts.skipTPCOnly) {
+            if (!trk.hasITS() && !trk.hasTRD() && !trk.hasTOF()) {
+              continue;
+            }
           }
-          trackProperties[counterTrackProps + IdxModPhi] = RecoDecay::constrainAngle(phi, 0.f, o2::constants::math::NSectors);
+          const bool isGoodTrack = trk.has_collision() && mults.size() > 0;
+          trackProperties[counterTrackProps + IdxTpcInnerParam] = trk.tpcInnerParam();
+          trackProperties[counterTrackProps + IdxTgl] = trk.tgl();
+          trackProperties[counterTrackProps + IdxSigned1Pt] = trk.signed1Pt();
+          trackProperties[counterTrackProps + IdxMass] = o2::track::pid_constants::sMasses[jParticleType];
+          trackProperties[counterTrackProps + IdxMultiplicity] = isGoodTrack ? mults[trk.collisionId()] / MultiplicityNorm : 1.;
+          trackProperties[counterTrackProps + IdxNClusters] = std::sqrt(nNclNormalization / trk.tpcNClsFound());
+          if (nnVersion >= OldestNNVersionWithFt0c) {
+            trackProperties[counterTrackProps + IdxFt0cOcc] = isGoodTrack ? collisions.iteratorAt(trk.collisionId()).ft0cOccupancyInTimeRange() / Ft0cOccupancyNorm : 1.;
+          }
+          if (nnVersion >= OldestNNVersionWithHadronicRate) {
+            const float hadronicRate = isGoodTrack ? hadronicRateForCollision[trk.collisionId()] : hadronicRateBegin;
+            trackProperties[counterTrackProps + IdxHadronicRate] = hadronicRate / hadronicRateNorm;
+          }
+          if (nnVersion >= OldestNNVersionWithModPhi) {
+            float phi = trk.phi();
+            if (nnVersion == NNVersionWithModPhiEntrance) {
+              phi += pidTPCopts.phiEntranceCoeff1 * LightSpeedDm2PS * 0.5 * pidTPCopts.phiEntranceCoeff2 * trk.signed1Pt();
+            }
+            trackProperties[counterTrackProps + IdxModPhi] = RecoDecay::constrainAngle(phi, 0.f, o2::constants::math::NSectors);
+          }
+          counterTrackProps += inputDimensions;
         }
-        counterTrackProps += inputDimensions;
       }
 
       const auto startNetworkEval = std::chrono::high_resolution_clock::now();
-      network.evalModel(trackProperties, outputNetwork);
+      if (speciesNetworkFlags[jParticleType] != 0) {
+        network.evalModel(trackProperties, outputNetwork);
+      } else {
+        outputNetwork.assign(predictionSize, UndefValueFloat);
+      }
       const auto stopNetworkEval = std::chrono::high_resolution_clock::now();
       durationNetwork += std::chrono::duration<float, std::ratio<1, NanoToOne>>(stopNetworkEval - startNetworkEval).count();
       if (outputNetwork.size() != predictionSize) {
