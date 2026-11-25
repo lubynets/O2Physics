@@ -483,14 +483,18 @@ struct HfCandidateCreator3Prong {
       const auto collision = rowTrackIndexProng3.template collision_as<Coll>();
       float centrality{-1.f};
       o2::hf_evsel::HfCollisionRejectionMask rejectionMask{};
+      const auto collisionId = collision.globalIndex();
       if constexpr (ApplyUpcSel) {
         rejectionMask = hfEvSel.getHfCollisionRejectionMaskWithUpc<true, CentEstimator, BCsType>(collision, centrality, ccdb, registry, bcs);
       } else {
         rejectionMask = hfEvSel.getHfCollisionRejectionMask<true, CentEstimator, BCsType>(collision, centrality, ccdb, registry);
       }
       if (rejectionMask != 0) {
+        LOG(info) << "Collision rejected, no " << collisionId;
         /// at least one event selection not satisfied --> reject the candidate
         continue;
+      } else {
+        LOG(info) << "Collision accepted, no " << collisionId;
       }
 
       const auto track0 = rowTrackIndexProng3.template prong0_as<TracksWCovExtraPidPiKaPrLightNuclei>();
